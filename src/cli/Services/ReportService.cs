@@ -6,6 +6,7 @@ namespace FBMngt.Services;
 
 public class ReportService
 {
+    // ZScoreReports
     public async Task GenerateZScoreReportsAsync()
     {
         await GenerateHitterZScoreReportAsync();
@@ -203,4 +204,15 @@ public class ReportService
         }
     }
 
+    // FanProsCoreFields
+    public Task GenerateFanProsCoreFieldsReportAsync(
+                                                int rows)
+    {
+        // TODO: Implement the report
+        // - Read FanPros CSV
+        // - Resolve PlayerID
+        // - Output tab-delimited file
+
+        return Task.CompletedTask;
+    }
 }

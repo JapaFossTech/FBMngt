@@ -60,5 +60,6 @@ class Program
             @"  import --match-column PLAYER&nbsp;NAME --file-Type FanPros [--show-player] [--rows 150]");
         Console.WriteLine("  report --zscores");
         Console.WriteLine("  data-integrity players [--dry-run]");
+        Console.WriteLine("  report --FanProsCoreFields [--rows 250]");
     }
 }
