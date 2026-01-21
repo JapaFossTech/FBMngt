@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "FBMngt": {
+      "commandName": "Project",
+      "commandLineArgs": "import --match-column \"PLAYER NAME\" --file-Type FanPros --show-player"
+    }
+  }
+}
