@@ -18,8 +18,6 @@ public static class ImportCommand
                 && i + 1 < args.Length)
             {
                 matchColumn = args[i + 1];
-                //matchColumn = matchColumn.Replace(
-                //                            "&nbsp;", " ");
             }
 
             if (args[i].Equals("--show-player",
