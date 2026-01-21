@@ -1,11 +1,19 @@
 ﻿using FBMngt.Data;
 using FBMngt.IO.Csv;
 using FBMngt.Models;
+using FBMngt.Services.Reporting;
 
 namespace FBMngt.Services;
 
 public class ReportService
 {
+    private readonly IReportPathProvider _reportPathProvider;
+
+    public ReportService(IReportPathProvider reportPathProvider)
+    {
+        _reportPathProvider = reportPathProvider;
+    }
+
     // ZScoreReports
     public async Task GenerateZScoreReportsAsync()
     {
@@ -212,6 +220,14 @@ public class ReportService
         // - Read FanPros CSV
         // - Resolve PlayerID
         // - Output tab-delimited file
+        var filePath = Path.Combine(
+                        _reportPathProvider.ReportPath,
+                        $"FBMngt_FanPros_CoreFields_{
+                                AppContext.SeasonYear}.tsv");
+
+        var header = "PlayerID\tPLAYER NAME\tTEAM\tPOS";
+
+        File.WriteAllText(filePath, header + Environment.NewLine);
 
         return Task.CompletedTask;
     }

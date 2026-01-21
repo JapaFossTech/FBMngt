@@ -1,6 +1,6 @@
 ﻿using NUnit.Framework;
 
-namespace FBMngt.Tests.Services.Player;
+namespace FBMngt.Tests.Services.Players;
 
 [TestFixture]
 public class SqlPlayerIdResolverTests

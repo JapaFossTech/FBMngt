@@ -1,4 +1,5 @@
 ﻿using FBMngt.Services;
+using FBMngt.Services.Reporting;
 
 namespace FBMngt.Commands;
 
@@ -6,11 +7,13 @@ public static class ReportCommand
 {
     public static async Task ExecuteAsync(string[] args)
     {
+        var service = new ReportService(
+                            new AppContextReportPathProvider());
+
         // Z-Score report (existing functionality)
         if (args.Length > 0 &&
             args[0].Equals("--zscores", AppConst.IGNORE_CASE))
         {
-            var service = new ReportService();
             await service.GenerateZScoreReportsAsync();
             return;
         }
@@ -30,7 +33,7 @@ public static class ReportCommand
 
         if (isFanProsCoreFields)
         {
-            var service = new ReportService();
+            
             await service.GenerateFanProsCoreFieldsReportAsync(rows);
             return;
         }
