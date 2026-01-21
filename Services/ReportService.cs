@@ -31,7 +31,7 @@ public class ReportService
         // 2. Load hitter projections
         string fullPath = Path.Combine(
                     AppContext.ProjectionPath,
-                    "2026_Steamer_Projections_Batters.csv");
+                    $"{AppContext.SeasonYear}_Steamer_Projections_Batters.csv");
         var hitters = CsvReader.ReadBatters(fullPath);
 
         var draftPool = ProjectionPoolService
@@ -99,7 +99,7 @@ public class ReportService
         var pitchers = CsvReader.ReadPitchers(
             Path.Combine(
                 AppContext.ProjectionPath,
-                "2026_Steamer_Projections_Pitchers.csv"));
+                $"{AppContext.SeasonYear}_Steamer_Projections_Pitchers.csv"));
 
         var matched = pitchers
             .Where(p => lookup.ContainsKey(p.PlayerName.Trim()))

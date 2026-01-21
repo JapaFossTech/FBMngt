@@ -45,7 +45,7 @@ public class ImportService
             string fullPath = Path.Combine(
                 AppContext.ImportedFilesPath,
                 fileType,
-                "FantasyPros_2026_Draft_ALL_Rankings.csv");
+                $"FantasyPros_{AppContext.SeasonYear}_Draft_ALL_Rankings.csv");
 
             var fanProsPlayers =
                 FanProsCsvReader.Read(fullPath, rows ?? 200);
@@ -230,7 +230,7 @@ public class ImportService
 //            string fullPath = Path.Combine(
 //                AppContext.ImportedFilesPath,
 //                fileType,
-//                "FantasyPros_2026_Draft_ALL_Rankings.csv");
+//                "FantasyPros_{AppContext.SeasonYear}_Draft_ALL_Rankings.csv");
 
 //            List<FanProsPlayer> fanPros =
 //                                FanProsCsvReader
@@ -249,7 +249,7 @@ public class ImportService
 //        {
 //            string fullPath = Path.Combine(
 //                    AppContext.ProjectionPath,
-//                    "2026_Steamer_Projections_Pitchers.csv");
+//                    "{AppContext.SeasonYear}_Steamer_Projections_Pitchers.csv");
 
 //            ProcessGroup(
 //                "Pitchers",
@@ -264,7 +264,7 @@ public class ImportService
 
 //            fullPath = Path.Combine(
 //                        AppContext.ProjectionPath,
-//                        "2026_Steamer_Projections_Batters.csv");
+//                        "{AppContext.SeasonYear}_Steamer_Projections_Batters.csv");
 
 //            ProcessGroup(
 //                "Batters",
