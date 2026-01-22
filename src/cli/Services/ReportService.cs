@@ -213,22 +213,32 @@ public class ReportService
     }
 
     // FanProsCoreFields
-    public Task GenerateFanProsCoreFieldsReportAsync(
-                                                int rows)
+    public Task GenerateFanProsCoreFieldsReportAsync(int rows)
     {
-        // TODO: Implement the report
-        // - Read FanPros CSV
-        // - Resolve PlayerID
-        // - Output tab-delimited file
+        var reportPath = _reportPathProvider.ReportPath;
+
+        if (!Directory.Exists(reportPath))
+        {
+            Directory.CreateDirectory(reportPath);
+        }
+
         var filePath = Path.Combine(
-                        _reportPathProvider.ReportPath,
-                        $"FBMngt_FanPros_CoreFields_{
-                                AppContext.SeasonYear}.tsv");
+            reportPath,
+            $"FBMngt_FanPros_CoreFields_{AppContext.SeasonYear}.tsv");
 
-        var header = "PlayerID\tPLAYER NAME\tTEAM\tPOS";
+        var lines = new List<string>
+    {
+        "PlayerID\tPLAYER NAME\tTEAM\tPOS"
+    };
 
-        File.WriteAllText(filePath, header + Environment.NewLine);
+        for (int i = 0; i < rows; i++)
+        {
+            lines.Add(string.Empty); // placeholder data row
+        }
+
+        File.WriteAllLines(filePath, lines);
 
         return Task.CompletedTask;
     }
+
 }

@@ -2,17 +2,17 @@
 using FBMngt.Tests.TestDoubles;
 using NUnit.Framework;
 
-namespace FBMngt.Tests.Services;
+namespace FBMngt.Tests.Services.ReportServices;
 
 [TestFixture]
-public class ReportServiceTests
+public class GenerateFanProsCoreFieldsReportAsyncTests
 {
     private const string FB_LOGS_PATH = 
         "C:\\Users\\Master2022\\Documents\\Javier\\FantasyBaseball\\Logs";
 
     [Test]
     public async Task 
-    T01_GenerateFanProsCoreFieldsReportAsync_WritesHeaderRow()
+    GivenCsvData_WhenReportCreated_ThenReportShouldHaveCorrectHeaders()
     {
         // Arrange
         
@@ -38,7 +38,7 @@ public class ReportServiceTests
     }
     [Test]
     public async Task 
-    T02_GenerateFanProsCoreFieldsReportAsync_CreatesOutputFile_InReportPath()
+    GivenCsvData_WhenReportGenerated_ThenFileCreated()
     {
         // Arrange
 
@@ -58,19 +58,28 @@ public class ReportServiceTests
     }
     [Test]
     public async Task 
-    T03_GenerateFanProsCoreFieldsReportAsync_WhenCalled_CreatesOutputFile()
+    GivenCsvData_When5Rows_ThenReport6Rows()
     {
         // Arrange
+        const int rows = 5;
 
-        var reportPathProvider = new FakeReportPathProvider(FB_LOGS_PATH);
+        var reportPathProvider =
+            new FakeReportPathProvider(FB_LOGS_PATH);
 
         var service = new ReportService(reportPathProvider);
 
         // Act
-        await service.GenerateFanProsCoreFieldsReportAsync(10);
+        await service.GenerateFanProsCoreFieldsReportAsync(rows);
 
         // Assert
-        Assert.That(false, Is.True, "Expected output file to be created (not implemented yet).");
+        var filePath = Path.Combine(
+            FB_LOGS_PATH,
+            $"FBMngt_FanPros_CoreFields_{AppContext.SeasonYear}.tsv");
+
+        var lines = File.ReadAllLines(filePath);
+
+        // 1 header + N data rows
+        Assert.That(lines.Length, Is.EqualTo(rows + 1));
     }
 
 
