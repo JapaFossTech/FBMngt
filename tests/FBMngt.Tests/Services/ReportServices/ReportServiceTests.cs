@@ -81,6 +81,28 @@ public class GenerateFanProsCoreFieldsReportAsyncTests
         // 1 header + N data rows
         Assert.That(lines.Length, Is.EqualTo(rows + 1));
     }
+    [Test]
+    public void GivenCsvFile_WhenPathProvided_ThenFileExist()
+    {
+        // Arrange
+        var basePath = System.AppContext.BaseDirectory;
+
+        var relativePath = Path.Combine(
+            "FanPros",
+            $"FantasyPros_{AppContext.SeasonYear}_Draft_ALL_Rankings.csv"); // <-- actual filename
+
+        var fullPath = Path.Combine(basePath, relativePath);
+
+        // Act
+        var exists = File.Exists(fullPath);
+
+        // Assert
+        Assert.That(
+            exists,
+            Is.True,
+            $"Expected CSV file to exist at: {fullPath}");
+    }
+
 
 
 }

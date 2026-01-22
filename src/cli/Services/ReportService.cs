@@ -2,6 +2,9 @@
 using FBMngt.IO.Csv;
 using FBMngt.Models;
 using FBMngt.Services.Reporting;
+using Microsoft.VisualBasic;
+using System.Reflection.PortableExecutable;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace FBMngt.Services;
 
@@ -215,6 +218,50 @@ public class ReportService
     // FanProsCoreFields
     public Task GenerateFanProsCoreFieldsReportAsync(int rows)
     {
+        //// 1) Find the FanPros CSV file
+        //    pathToCsv = resolve CSV location(possibly from config or convention)
+
+        //// 2) Parse the CSV file into structured rows
+        ////    – CSV has columns: RK, PLAYER NAME, TEAM, POS, BEST, WORST, AVG, etc.
+        //rawRows = CsvParser.Read(pathToCsv)
+
+        //// 3) Normalize the raw rows
+        ////    – Remove header row from CSV
+        ////    – Normalize player name (strip parenthesis, trim, etc.)
+        //normalizedRows = rawRows.Select(row => new
+        //{
+        //    PlayerName = Normalize(row["PLAYER NAME"]),
+        //    Team = row["TEAM"],
+        //    Pos = row["POS"]
+        //})
+
+        //// 4) Limit to top N (rows parameter)
+        //selectedRows = normalizedRows.Take(rows)
+
+        //// 5) Resolve PlayerID for each selected row
+        ////    – Use IPlayerIdResolver (abstracted service)
+        //enrichedRows = For each selected row:
+        //    {
+        //        Id = playerResolver.ResolvePlayerId(row.PlayerName)
+        //        PlayerName = row.PlayerName
+        //        Team = row.Team
+        //        Pos = row.Pos
+        //    }
+
+        //    // 6) Write the output file
+        //    //    – First line = tab delimited header:
+        //    //         PlayerID   PLAYER NAME   TEAM   POS
+        //    //    – Then one line per enriched row:
+        //    //         {PlayerID}\t{PlayerName}\t{Team}\t{Pos}
+        //    //    – Use AppContext.ReportPath via injected provider
+        //    outputFilePath = combine ReportPath with $"FBMngt_FanPros_CoreFields_{AppContext.SeasonYear}.tsv"
+        //open file for writing
+        //write header line
+        //for each enriched row:
+        //    write row data
+
+        //// 7) Return
+        //return
         var reportPath = _reportPathProvider.ReportPath;
 
         if (!Directory.Exists(reportPath))
