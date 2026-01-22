@@ -102,7 +102,42 @@ public class GenerateFanProsCoreFieldsReportAsyncTests
             Is.True,
             $"Expected CSV file to exist at: {fullPath}");
     }
+    [Test]
+    public async Task 
+    GivenCsvData_WhenPlayerHasNoDbMatch_ThenPlayerIdIsBlank()
+    {
+        // Arrange
+        const int rows = 1;
 
+        var reportPathProvider =
+            new FakeReportPathProvider(FB_LOGS_PATH);
 
+        var service =
+            new ReportService(reportPathProvider);
 
+        // Act
+        await service.GenerateFanProsCoreFieldsReportAsync(rows);
+
+        // Assert
+        var filePath = Path.Combine(
+            FB_LOGS_PATH,
+            $"FBMngt_FanPros_CoreFields_{AppContext.SeasonYear}.tsv");
+
+        var lines = File.ReadAllLines(filePath);
+
+        // header + 1 data row
+        Assert.That(lines.Length, Is.EqualTo(2));
+
+        var dataRow = lines[1];
+
+        var columns = dataRow.Split('\t');
+
+        // report row must have at least 4 columns
+        Assert.That(columns.Length, Is.GreaterThanOrEqualTo(4));
+
+        // core behavior
+        Assert.That(columns[0], Is.EqualTo(string.Empty), "PlayerID should be blank");
+        Assert.That(columns[1], Is.Not.Empty, "Player name must be written from CSV");
+
+    }
 }

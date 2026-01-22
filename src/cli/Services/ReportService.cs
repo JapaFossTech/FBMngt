@@ -264,19 +264,19 @@ public class ReportService
         //return
         var reportPath = _reportPathProvider.ReportPath;
 
-        if (!Directory.Exists(reportPath))
-        {
-            Directory.CreateDirectory(reportPath);
-        }
+        //if (!Directory.Exists(reportPath))
+        //{
+        //    Directory.CreateDirectory(reportPath);
+        //}
 
         var filePath = Path.Combine(
             reportPath,
             $"FBMngt_FanPros_CoreFields_{AppContext.SeasonYear}.tsv");
 
         var lines = new List<string>
-    {
-        "PlayerID\tPLAYER NAME\tTEAM\tPOS"
-    };
+        {
+            "PlayerID\tPLAYER NAME\tTEAM\tPOS"
+        };
 
         for (int i = 0; i < rows; i++)
         {
