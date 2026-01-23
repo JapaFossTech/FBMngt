@@ -1,7 +1,6 @@
 ﻿using FBMngt.Data;
 using FBMngt.IO.Csv;
 using FBMngt.Models;
-using FBMngt.Services.Reporting;
 using Microsoft.VisualBasic;
 using System.Reflection.PortableExecutable;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -10,11 +9,11 @@ namespace FBMngt.Services;
 
 public class ReportService
 {
-    private readonly IReportPathProvider _reportPathProvider;
+    private readonly IConfigSettings _configSettings;
 
-    public ReportService(IReportPathProvider reportPathProvider)
+    public ReportService(IConfigSettings configSettings)
     {
-        _reportPathProvider = reportPathProvider;
+        _configSettings = configSettings;
     }
 
     // ZScoreReports
@@ -42,8 +41,8 @@ public class ReportService
 
         // 2. Load hitter projections
         string fullPath = Path.Combine(
-                    AppContext.ProjectionPath,
-                    $"{AppContext.SeasonYear}_Steamer_Projections_Batters.csv");
+                    AppSettings.ProjectionPath,
+                    $"{AppSettings.SeasonYear}_Steamer_Projections_Batters.csv");
         var hitters = CsvReader.ReadBatters(fullPath);
 
         var draftPool = ProjectionPoolService
@@ -110,8 +109,8 @@ public class ReportService
 
         var pitchers = CsvReader.ReadPitchers(
             Path.Combine(
-                AppContext.ProjectionPath,
-                $"{AppContext.SeasonYear}_Steamer_Projections_Pitchers.csv"));
+                AppSettings.ProjectionPath,
+                $"{AppSettings.SeasonYear}_Steamer_Projections_Pitchers.csv"));
 
         var matched = pitchers
             .Where(p => lookup.ContainsKey(p.PlayerName.Trim()))
@@ -138,8 +137,8 @@ public class ReportService
     private static void WriteHitterReport(List<MatchedHitter> hitters)
     {
         var outputPath = Path.Combine(
-    AppContext.ReportPath,
-    $"{AppConst.APP_NAME}_Hitters_ZScores_{AppContext.SeasonYear}.tsv");
+    AppSettings.ReportPath,
+    $"{AppConst.APP_NAME}_Hitters_ZScores_{AppSettings.SeasonYear}.tsv");
 
 
         using var writer = new StreamWriter(outputPath);
@@ -167,9 +166,9 @@ public class ReportService
                                 List<MatchedPitcher> pitchers)
     {
         var path = Path.Combine(
-            AppContext.ReportPath,
+            AppSettings.ReportPath,
             $"{AppConst.APP_NAME}_Pitchers_ZScores_{
-                                    AppContext.SeasonYear}.tsv");
+                                    AppSettings.SeasonYear}.tsv");
 
         using var writer = new StreamWriter(path);
 
@@ -218,8 +217,14 @@ public class ReportService
     // FanProsCoreFields
     public Task GenerateFanProsCoreFieldsReportAsync(int rows)
     {
-        //// 1) Find the FanPros CSV file
-        //    pathToCsv = resolve CSV location(possibly from config or convention)
+        // 1) Read from FanPros CSV file
+        //var fanProsCsvFile = Path.Combine(
+        //    ConfigSettings.FanProsPath,
+        //    $"FantasyPros_{ConfigSettings.SeasonYear}_Draft_ALL_Rankings.csv");
+
+        var fanProsPlayers =
+            FanProsCsvReader.Read(
+                _configSettings.FanPros_Rankings_Filepath, rows);
 
         //// 2) Parse the CSV file into structured rows
         ////    – CSV has columns: RK, PLAYER NAME, TEAM, POS, BEST, WORST, AVG, etc.
@@ -261,8 +266,6 @@ public class ReportService
         //    write row data
 
         //// 7) Return
-        //return
-        var reportPath = _reportPathProvider.ReportPath;
 
         //if (!Directory.Exists(reportPath))
         //{
@@ -270,8 +273,8 @@ public class ReportService
         //}
 
         var filePath = Path.Combine(
-            reportPath,
-            $"FBMngt_FanPros_CoreFields_{AppContext.SeasonYear}.tsv");
+            _configSettings.ReportPath,
+            $"FBMngt_FanPros_CoreFields_{AppSettings.SeasonYear}.tsv");
 
         var lines = new List<string>
         {

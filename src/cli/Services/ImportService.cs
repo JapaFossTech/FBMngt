@@ -43,9 +43,9 @@ public class ImportService
             fileType.Equals("FanPros", AppConst.IGNORE_CASE))
         {
             string fullPath = Path.Combine(
-                AppContext.ImportedFilesPath,
+                AppSettings.ImportedFilesPath,
                 fileType,
-                $"FantasyPros_{AppContext.SeasonYear}_Draft_ALL_Rankings.csv");
+                $"FantasyPros_{AppSettings.SeasonYear}_Draft_ALL_Rankings.csv");
 
             var fanProsPlayers =
                 FanProsCsvReader.Read(fullPath, rows ?? 200);

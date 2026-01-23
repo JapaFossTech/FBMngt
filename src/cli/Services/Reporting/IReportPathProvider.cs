@@ -1,12 +1,12 @@
-﻿namespace FBMngt.Services.Reporting;
+﻿//namespace FBMngt.Services.Reporting;
 
-public interface IReportPathProvider
-{
-    string ReportPath { get; }
-}
+//public interface IReportPathProvider
+//{
+//    string ReportPath { get; }
+//}
 
-public class AppContextReportPathProvider : 
-                                IReportPathProvider
-{
-    public string ReportPath => AppContext.ReportPath;
-}
+//public class ReportPath_ConfigSettingProvider : 
+//                                IReportPathProvider
+//{
+//    public string ReportPath => AppSettings.ReportPath;
+//}
