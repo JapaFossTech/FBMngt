@@ -1,4 +1,5 @@
-﻿using FBMngt.Services;
+﻿using FBMngt.Data;
+using FBMngt.Services;
 
 namespace FBMngt.Commands;
 
@@ -6,7 +7,8 @@ public static class ReportCommand
 {
     public static async Task ExecuteAsync(string[] args)
     {
-        var service = new ReportService(new AppSettings());
+        var service = new ReportService(new AppSettings(),
+                                        new PlayerRepository());
 
         // Z-Score report (existing functionality)
         if (args.Length > 0 &&

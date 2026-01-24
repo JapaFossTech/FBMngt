@@ -1,6 +1,7 @@
 ﻿using FBMngt.Data;
 using FBMngt.IO.Csv;
 using FBMngt.Models;
+using FBMngt.Services.Players;
 using Microsoft.VisualBasic;
 using System.Reflection.PortableExecutable;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -10,10 +11,13 @@ namespace FBMngt.Services;
 public class ReportService
 {
     private readonly ConfigSettings _configSettings;
+    private readonly IPlayerRepository _playerRepository;
 
-    public ReportService(IAppSettings appSettings)
+    public ReportService(IAppSettings appSettings, 
+                        IPlayerRepository playerRepository)
     {
         _configSettings = new ConfigSettings(appSettings);
+        _playerRepository = playerRepository;
     }
 
     // ZScoreReports
@@ -27,7 +31,7 @@ public class ReportService
     {
         // 1. Load DB players
         var repo = new PlayerRepository();
-        var players = await repo.GetPlayersAsync();
+        var players = await repo.GetAllAsync();
 
         var lookup = new Dictionary<string, Player>(
                                 StringComparer.OrdinalIgnoreCase);
@@ -72,7 +76,7 @@ public class ReportService
             {
                 matched.Add(new MatchedHitter
                 {
-                    PlayerID = dbPlayer.PlayerID,
+                    PlayerID = dbPlayer.PlayerID!.Value,
                     MatchedName = h.PlayerName,
                     Projection = h
                 });
@@ -95,7 +99,7 @@ public class ReportService
     private async Task GeneratePitcherZScoreReportAsync()
     {
         var repo = new PlayerRepository();
-        var players = await repo.GetPlayersAsync();
+        var players = await repo.GetAllAsync();
 
         Dictionary<string, Player> lookup = new(
                                     StringComparer.OrdinalIgnoreCase);
@@ -116,7 +120,7 @@ public class ReportService
             .Where(p => lookup.ContainsKey(p.PlayerName.Trim()))
             .Select(p => new MatchedPitcher
             {
-                PlayerID = lookup[p.PlayerName.Trim()].PlayerID,
+                PlayerID = lookup[p.PlayerName.Trim()].PlayerID!.Value,
                 MatchedName = p.PlayerName,
                 Projection = p
             })
@@ -216,19 +220,22 @@ public class ReportService
     }
 
     // FanProsCoreFields
-    public Task GenerateFanProsCoreFieldsReportAsync(int rows)
+    public async Task GenerateFanProsCoreFieldsReportAsync(int rows)
     {
         // Read from FanPros CSV file
 
         List<FanProsPlayer> fanProsPlayers = FanProsCsvReader.Read(
-                            _configSettings.FanPros_Rankings_InputCsv_Path, rows);
+                            _configSettings.FanPros_Rankings_InputCsv_Path, 
+                            rows);
 
-        // Resolve PlayerID for each selected row
+        // Resolve PlayerIDs (batch, once)
+        var resolver = new PlayerResolver(_playerRepository);
+
+        await resolver.ResolvePlayerIDAsync(
+                        fanProsPlayers.Cast<IPlayer>().ToList());
 
         // Write the output file
         WriteFanProsReport(fanProsPlayers);
-
-        return Task.CompletedTask;
     }
     private void WriteFanProsReport(List<FanProsPlayer> fanProsPlayers)
     {
@@ -239,7 +246,7 @@ public class ReportService
         foreach (var p in fanProsPlayers.OrderBy(p => p.Rank))
         {
             writer.WriteLine(
-                $"\t{p.PlayerName}\t{p.Team}\t{p.Position}");
+                $"{p.PlayerID}\t{p.PlayerName}\t{p.Team}\t{p.Position}");
         }
 
         Console.WriteLine("Pitcher Z-score report generated:");

@@ -6,15 +6,11 @@ using System.Threading.Tasks;
 
 namespace FBMngt.Models;
 
-public interface IPlayer
-{
-    string PlayerName { get; set; }
-    string Team { get; set; }
-    //string? OrganizationId { get; set; }   // DB field
-}
+
 
 public class SteamerBatterProjection : IPlayer
 {
+    public int? PlayerID { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public string PlayerName { get; set; } = string.Empty;
 
     public int PA { get; set; }
@@ -33,12 +29,12 @@ public class SteamerBatterProjection : IPlayer
     public double Z_AVG { get; set; }
 
     public double TotalZ { get; set; }
-    public string Team { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    //public string? OrganizationId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public string? Team { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 }
 
 public class SteamerPitcherProjection : IPlayer
 {
+    public int? PlayerID { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public string PlayerName { get; set; } = string.Empty;
 
     public double IP { get; set; }
@@ -58,8 +54,7 @@ public class SteamerPitcherProjection : IPlayer
     public double Z_WHIP { get; set; }
 
     public double TotalZ { get; set; }
-    public string Team { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    //public string? OrganizationId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public string? Team { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 }
 
 

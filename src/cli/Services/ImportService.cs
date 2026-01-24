@@ -21,7 +21,7 @@ public class ImportService
     {
         // 1. Load DB data
         var playerRepo = new PlayerRepository();
-        var players = await playerRepo.GetPlayersAsync();
+        var players = await playerRepo.GetAllAsync();
 
         var teamRepo = new TeamRepository();
         var teams = await teamRepo.GetTeamsAsync();

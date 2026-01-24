@@ -4,7 +4,12 @@ using Microsoft.Extensions.Configuration;
 
 namespace FBMngt.Data;
 
-public class PlayerRepository
+public interface IPlayerRepository
+{
+    Task<List<Player>> GetAllAsync();
+}
+
+public class PlayerRepository : IPlayerRepository
 {
     private readonly string _connectionString;
 
@@ -15,7 +20,7 @@ public class PlayerRepository
             ?? throw new Exception("Missing connection string 'MLB'");
     }
 
-    public async Task<List<Player>> GetPlayersAsync()
+    public async Task<List<Player>> GetAllAsync()
     {
         var players = new List<Player>();
 
