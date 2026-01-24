@@ -9,11 +9,11 @@ namespace FBMngt.Services;
 
 public class ReportService
 {
-    private readonly IConfigSettings _configSettings;
+    private readonly ConfigSettings _configSettings;
 
-    public ReportService(IConfigSettings configSettings)
+    public ReportService(IAppSettings appSettings)
     {
-        _configSettings = configSettings;
+        _configSettings = new ConfigSettings(appSettings);
     }
 
     // ZScoreReports
@@ -41,8 +41,8 @@ public class ReportService
 
         // 2. Load hitter projections
         string fullPath = Path.Combine(
-                    AppSettings.ProjectionPath,
-                    $"{AppSettings.SeasonYear}_Steamer_Projections_Batters.csv");
+                    _configSettings.AppSettings.ProjectionPath,
+                    $"{_configSettings.AppSettings.SeasonYear}_Steamer_Projections_Batters.csv");
         var hitters = CsvReader.ReadBatters(fullPath);
 
         var draftPool = ProjectionPoolService
@@ -109,8 +109,8 @@ public class ReportService
 
         var pitchers = CsvReader.ReadPitchers(
             Path.Combine(
-                AppSettings.ProjectionPath,
-                $"{AppSettings.SeasonYear}_Steamer_Projections_Pitchers.csv"));
+                _configSettings.AppSettings.ProjectionPath,
+                $"{_configSettings.AppSettings.SeasonYear}_Steamer_Projections_Pitchers.csv"));
 
         var matched = pitchers
             .Where(p => lookup.ContainsKey(p.PlayerName.Trim()))
@@ -134,11 +134,12 @@ public class ReportService
                 .ToList());
     }
 
-    private static void WriteHitterReport(List<MatchedHitter> hitters)
+    private void WriteHitterReport(List<MatchedHitter> hitters)
     {
         var outputPath = Path.Combine(
-    AppSettings.ReportPath,
-    $"{AppConst.APP_NAME}_Hitters_ZScores_{AppSettings.SeasonYear}.tsv");
+            _configSettings.AppSettings.ReportPath,
+            $"{AppConst.APP_NAME}_Hitters_ZScores_{
+                _configSettings.AppSettings.SeasonYear}.tsv");
 
 
         using var writer = new StreamWriter(outputPath);
@@ -162,13 +163,13 @@ public class ReportService
         Console.WriteLine($"Z-score report generated:");
         Console.WriteLine(outputPath);
     }
-    private static void WritePitcherReport(
+    private void WritePitcherReport(
                                 List<MatchedPitcher> pitchers)
     {
         var path = Path.Combine(
-            AppSettings.ReportPath,
+            _configSettings.AppSettings.ReportPath,
             $"{AppConst.APP_NAME}_Pitchers_ZScores_{
-                                    AppSettings.SeasonYear}.tsv");
+                    _configSettings.AppSettings.SeasonYear}.tsv");
 
         using var writer = new StreamWriter(path);
 
@@ -217,78 +218,31 @@ public class ReportService
     // FanProsCoreFields
     public Task GenerateFanProsCoreFieldsReportAsync(int rows)
     {
-        // 1) Read from FanPros CSV file
-        //var fanProsCsvFile = Path.Combine(
-        //    ConfigSettings.FanProsPath,
-        //    $"FantasyPros_{ConfigSettings.SeasonYear}_Draft_ALL_Rankings.csv");
+        // Read from FanPros CSV file
 
-        var fanProsPlayers =
-            FanProsCsvReader.Read(
-                _configSettings.FanPros_Rankings_Filepath, rows);
+        List<FanProsPlayer> fanProsPlayers = FanProsCsvReader.Read(
+                            _configSettings.FanPros_Rankings_InputCsv_Path, rows);
 
-        //// 2) Parse the CSV file into structured rows
-        ////    – CSV has columns: RK, PLAYER NAME, TEAM, POS, BEST, WORST, AVG, etc.
-        //rawRows = CsvParser.Read(pathToCsv)
+        // Resolve PlayerID for each selected row
 
-        //// 3) Normalize the raw rows
-        ////    – Remove header row from CSV
-        ////    – Normalize player name (strip parenthesis, trim, etc.)
-        //normalizedRows = rawRows.Select(row => new
-        //{
-        //    PlayerName = Normalize(row["PLAYER NAME"]),
-        //    Team = row["TEAM"],
-        //    Pos = row["POS"]
-        //})
-
-        //// 4) Limit to top N (rows parameter)
-        //selectedRows = normalizedRows.Take(rows)
-
-        //// 5) Resolve PlayerID for each selected row
-        ////    – Use IPlayerIdResolver (abstracted service)
-        //enrichedRows = For each selected row:
-        //    {
-        //        Id = playerResolver.ResolvePlayerId(row.PlayerName)
-        //        PlayerName = row.PlayerName
-        //        Team = row.Team
-        //        Pos = row.Pos
-        //    }
-
-        //    // 6) Write the output file
-        //    //    – First line = tab delimited header:
-        //    //         PlayerID   PLAYER NAME   TEAM   POS
-        //    //    – Then one line per enriched row:
-        //    //         {PlayerID}\t{PlayerName}\t{Team}\t{Pos}
-        //    //    – Use AppContext.ReportPath via injected provider
-        //    outputFilePath = combine ReportPath with $"FBMngt_FanPros_CoreFields_{AppContext.SeasonYear}.tsv"
-        //open file for writing
-        //write header line
-        //for each enriched row:
-        //    write row data
-
-        //// 7) Return
-
-        //if (!Directory.Exists(reportPath))
-        //{
-        //    Directory.CreateDirectory(reportPath);
-        //}
-
-        var filePath = Path.Combine(
-            _configSettings.ReportPath,
-            $"FBMngt_FanPros_CoreFields_{AppSettings.SeasonYear}.tsv");
-
-        var lines = new List<string>
-        {
-            "PlayerID\tPLAYER NAME\tTEAM\tPOS"
-        };
-
-        for (int i = 0; i < rows; i++)
-        {
-            lines.Add(string.Empty); // placeholder data row
-        }
-
-        File.WriteAllLines(filePath, lines);
+        // Write the output file
+        WriteFanProsReport(fanProsPlayers);
 
         return Task.CompletedTask;
     }
+    private void WriteFanProsReport(List<FanProsPlayer> fanProsPlayers)
+    {
+        using var writer = new StreamWriter(_configSettings.FanPros_OutReport_Path);
 
+        writer.WriteLine("PlayerID\tPLAYER NAME\tTEAM\tPOS");
+
+        foreach (var p in fanProsPlayers.OrderBy(p => p.Rank))
+        {
+            writer.WriteLine(
+                $"\t{p.PlayerName}\t{p.Team}\t{p.Position}");
+        }
+
+        Console.WriteLine("Pitcher Z-score report generated:");
+        Console.WriteLine(_configSettings.FanPros_OutReport_Path);
+    }
 }

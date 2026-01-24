@@ -1,4 +1,5 @@
 ﻿using FBMngt.Services;
+using Microsoft.Identity.Client;
 
 namespace FBMngt.Commands;
 
@@ -47,7 +48,7 @@ public static class ImportCommand
             return;
         }
 
-        var service = new ImportService();
+        var service = new ImportService(new AppSettings());
         await service.CheckMatchesAsync(matchColumn,
                                         showPlayer,
                                         fileType,

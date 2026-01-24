@@ -8,6 +8,11 @@ namespace FBMngt.Services;
 
 public class ImportService
 {
+    private readonly ConfigSettings _configSettings;
+    public ImportService(IAppSettings appSettings)
+    {
+        _configSettings = new ConfigSettings(appSettings);
+    }
     public async Task CheckMatchesAsync(
         string matchColumn,
         bool showPlayer,
@@ -43,9 +48,11 @@ public class ImportService
             fileType.Equals("FanPros", AppConst.IGNORE_CASE))
         {
             string fullPath = Path.Combine(
-                AppSettings.ImportedFilesPath,
+                _configSettings.AppSettings.ImportedFilesPath,
                 fileType,
-                $"FantasyPros_{AppSettings.SeasonYear}_Draft_ALL_Rankings.csv");
+                $"FantasyPros_{
+                    _configSettings.AppSettings.SeasonYear
+                    }_Draft_ALL_Rankings.csv");
 
             var fanProsPlayers =
                 FanProsCsvReader.Read(fullPath, rows ?? 200);

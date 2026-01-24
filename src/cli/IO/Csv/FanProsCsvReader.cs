@@ -6,7 +6,8 @@ namespace FBMngt.IO.Csv;
 
 public static class FanProsCsvReader
 {
-    public static List<FanProsPlayer> Read(string path, int? maxRows = null)
+    public static List<FanProsPlayer> Read(
+                                string path, int? maxRows = null)
     {
         var result = new List<FanProsPlayer>();
 
@@ -31,7 +32,8 @@ public static class FanProsCsvReader
 
         while (!parser.EndOfData)
         {
-            if (maxRows.HasValue && maxRows.Value > 0 && count >= maxRows.Value)
+            if (maxRows.HasValue && maxRows.Value > 0 
+                                    && count >= maxRows.Value)
                 break;
 
             var cols = parser.ReadFields();

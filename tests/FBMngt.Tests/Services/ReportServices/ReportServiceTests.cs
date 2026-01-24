@@ -7,29 +7,29 @@ namespace FBMngt.Tests.Services.ReportServices;
 [TestFixture]
 public class GenerateFanProsCoreFieldsReportAsyncTests
 {
-    private const string FB_LOGS_PATH = 
-        "C:\\Users\\Master2022\\Documents\\Javier\\FantasyBaseball\\Logs";
-    private string FANPROS_FILE_PATH = 
-        $@"FanPros\FantasyPros_{AppSettings.SeasonYear}_Draft_ALL_Rankings.csv";
+    //private const string FB_LOGS_PATH = 
+    //    "C:\\Users\\Master2022\\Documents\\Javier\\FantasyBaseball\\Logs";
+    //private string FANPROS_FILE_PATH = 
+    //    $@"FanPros\FantasyPros_{AppSettings.SeasonYear}_Draft_ALL_Rankings.csv";
 
     [Test]
     public async Task 
     GivenCsvData_WhenReportCreated_ThenReportShouldHaveCorrectHeaders()
     {
         // Arrange
-        
-        var reportPathProvider = new FakeConfigSettingsProvider
-            (FB_LOGS_PATH, FANPROS_FILE_PATH);
 
-        var service = new ReportService(reportPathProvider);
+        var fakeAppSettings = new FakeAppSettings();
+
+        var service = new ReportService(fakeAppSettings);
 
         // Act
         await service.GenerateFanProsCoreFieldsReportAsync(10);
 
         // Assert
         var filePath = Path.Combine(
-            FB_LOGS_PATH,
-            $"FBMngt_FanPros_CoreFields_{AppSettings.SeasonYear}.tsv");
+            fakeAppSettings.ReportPath,
+            $"FBMngt_FanPros_CoreFields_{
+                        fakeAppSettings.SeasonYear}.tsv");
 
         var lines = File.ReadAllLines(filePath);
 
@@ -45,18 +45,18 @@ public class GenerateFanProsCoreFieldsReportAsyncTests
     {
         // Arrange
 
-        var reportPathProvider = new FakeConfigSettingsProvider(
-            FB_LOGS_PATH, FANPROS_FILE_PATH);
+        var fakeAppSettings = new FakeAppSettings();
 
-        var service = new ReportService(reportPathProvider);
+        var service = new ReportService(fakeAppSettings);
 
         // Act
         await service.GenerateFanProsCoreFieldsReportAsync(10);
 
         // Assert
         var files = Directory.GetFiles(
-            FB_LOGS_PATH,
-            $"FBMngt_FanPros_CoreFields_{AppSettings.SeasonYear}.tsv");
+            fakeAppSettings.ReportPath,
+            $"FBMngt_FanPros_CoreFields_{
+                        fakeAppSettings.SeasonYear}.tsv");
 
         Assert.That(files.Length, Is.EqualTo(1));
     }
@@ -67,18 +67,18 @@ public class GenerateFanProsCoreFieldsReportAsyncTests
         // Arrange
         const int rows = 5;
 
-        var reportPathProvider = new FakeConfigSettingsProvider(
-            FB_LOGS_PATH, FANPROS_FILE_PATH);
+        var fakeAppSettings = new FakeAppSettings();
 
-        var service = new ReportService(reportPathProvider);
+        var service = new ReportService(fakeAppSettings);
 
         // Act
         await service.GenerateFanProsCoreFieldsReportAsync(rows);
 
         // Assert
         var filePath = Path.Combine(
-            FB_LOGS_PATH,
-            $"FBMngt_FanPros_CoreFields_{AppSettings.SeasonYear}.tsv");
+            fakeAppSettings.ReportPath,
+            $"FBMngt_FanPros_CoreFields_{
+                        fakeAppSettings.SeasonYear}.tsv");
 
         var lines = File.ReadAllLines(filePath);
 
@@ -89,11 +89,13 @@ public class GenerateFanProsCoreFieldsReportAsyncTests
     public void GivenCsvFile_WhenPathProvided_ThenFileExist()
     {
         // Arrange
+        var fakeAppSettings = new FakeAppSettings();
         var basePath = System.AppContext.BaseDirectory;
 
         var relativePath = Path.Combine(
             "FanPros",
-            $"FantasyPros_{AppSettings.SeasonYear}_Draft_ALL_Rankings.csv"); // <-- actual filename
+            $"FantasyPros_{fakeAppSettings.SeasonYear
+                }_Draft_ALL_Rankings.csv");
 
         var fullPath = Path.Combine(basePath, relativePath);
 
@@ -113,19 +115,19 @@ public class GenerateFanProsCoreFieldsReportAsyncTests
         // Arrange
         const int rows = 1;
 
-        var reportPathProvider = new FakeConfigSettingsProvider(
-            FB_LOGS_PATH, FANPROS_FILE_PATH);
+        var fakeAppSettings = new FakeAppSettings();
 
         var service =
-            new ReportService(reportPathProvider);
+            new ReportService(fakeAppSettings);
 
         // Act
         await service.GenerateFanProsCoreFieldsReportAsync(rows);
 
         // Assert
         var filePath = Path.Combine(
-            FB_LOGS_PATH,
-            $"FBMngt_FanPros_CoreFields_{AppSettings.SeasonYear}.tsv");
+            fakeAppSettings.ReportPath,
+            $"FBMngt_FanPros_CoreFields_{
+                    fakeAppSettings.SeasonYear}.tsv");
 
         var lines = File.ReadAllLines(filePath);
 

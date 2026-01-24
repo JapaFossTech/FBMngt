@@ -6,7 +6,7 @@ public static class ReportCommand
 {
     public static async Task ExecuteAsync(string[] args)
     {
-        var service = new ReportService(new ConfigSettings());
+        var service = new ReportService(new AppSettings());
 
         // Z-Score report (existing functionality)
         if (args.Length > 0 &&

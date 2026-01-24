@@ -1,40 +1,60 @@
 ﻿namespace FBMngt;
 
-public static class AppSettings
+public interface IAppSettings
 {
-    public static int SeasonYear =>
-        DateTime.Now.Year;
-    public static string ProjectionPath =>
+    string FanPros_RelativePath { get; }
+    string ImportedFilesPath { get; }
+    string ProjectionPath { get; }
+    string ReportPath { get; }
+    int SeasonYear { get; }
+}
+
+public class AppSettings: IAppSettings
+{
+    public int SeasonYear => DateTime.Now.Year;
+    public string ProjectionPath =>
         Program.Configuration["Paths:Projections"]
         ?? throw new Exception("Missing config Paths:Projections");
 
-    public static string ReportPath =>
+    public string ReportPath =>
         Program.Configuration["Paths:Reports"]
         ?? throw new Exception("Missing config Paths:Reports");
 
-    public static string ImportedFilesPath =>
+    public string ImportedFilesPath =>
         Program.Configuration["Paths:ImportedFiles"]
         ?? throw new Exception("Missing config Paths:ImportedFiles");
-    public static string FanProsPath =>
+    public string FanPros_RelativePath =>
         Program.Configuration["Paths:FanPros"]
         ?? throw new Exception("Missing config Paths:FanPros");
 
 }
-public interface IConfigSettings
+public class ConfigSettings
 {
-    string ReportPath { get; }
-    string FanPros_Rankings_Filepath { get; }
-}
-public class ConfigSettings: IConfigSettings
-{
-    public string ReportPath => AppSettings.ReportPath;
-    public string FanPros_Rankings_Filepath
+    public IAppSettings AppSettings;
+
+    public ConfigSettings(IAppSettings appSettings)
+    {
+        AppSettings = appSettings;
+    }
+    //public string ReportPath => AppSettings.ReportPath;
+    public string FanPros_Rankings_InputCsv_Path
     {
         get
         {
             var fanProsCsvFile = Path.Combine(
-            AppSettings.FanProsPath,
+            AppSettings.FanPros_RelativePath,
             $"FantasyPros_{AppSettings.SeasonYear}_Draft_ALL_Rankings.csv");
+
+            return fanProsCsvFile;
+        }
+    }
+    public string FanPros_OutReport_Path
+    {
+        get
+        {
+            var fanProsCsvFile = Path.Combine(
+            AppSettings.ReportPath,
+            $"FBMngt_FanPros_CoreFields_{AppSettings.SeasonYear}.tsv");
 
             return fanProsCsvFile;
         }
