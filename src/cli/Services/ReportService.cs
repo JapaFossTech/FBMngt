@@ -8,6 +8,39 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace FBMngt.Services;
 
+public abstract class ReportBase<TInput, TOutput>
+{
+    protected readonly PlayerResolver _playerResolver;
+
+    protected ReportBase(PlayerResolver playerResolver)
+    {
+        _playerResolver = playerResolver;
+    }
+
+    public async Task GenerateAsync(int rows)
+    {
+        // 1. Read
+        var input = await ReadAsync(rows);
+
+        // 2. Resolve PlayerIDs (shared)
+        await _playerResolver.ResolvePlayerIDAsync(
+            input.Cast<IPlayer>().ToList());
+
+        // 3. Transform (optional)
+        var output = await TransformAsync(input);
+
+        // 4. Write
+        await WriteAsync(output);
+    }
+
+    protected abstract Task<List<TInput>> ReadAsync(int rows);
+
+    protected virtual Task<List<TOutput>> TransformAsync(List<TInput> input)
+        => Task.FromResult(input.Cast<TOutput>().ToList());
+
+    protected abstract Task WriteAsync(List<TOutput> output);
+}
+
 public class ReportService
 {
     private readonly ConfigSettings _configSettings;
