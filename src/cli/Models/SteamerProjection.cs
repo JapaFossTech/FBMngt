@@ -6,11 +6,9 @@ using System.Threading.Tasks;
 
 namespace FBMngt.Models;
 
-
-
 public class SteamerBatterProjection : IPlayer
 {
-    public int? PlayerID { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public int? PlayerID { get; set; }
     public string PlayerName { get; set; } = string.Empty;
 
     public int PA { get; set; }
@@ -34,7 +32,7 @@ public class SteamerBatterProjection : IPlayer
 
 public class SteamerPitcherProjection : IPlayer
 {
-    public int? PlayerID { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public int? PlayerID { get; set; }
     public string PlayerName { get; set; } = string.Empty;
 
     public double IP { get; set; }

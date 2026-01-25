@@ -15,7 +15,6 @@ public class GenerateFanProsCoreFieldsReportAsyncTests
     private List<Player> _dbPlayers;
     private Mock<IPlayerRepository> _repositoryMock;
     private ReportService _reportService;
-    //private PlayerResolver _resolver;
 
     [SetUp]
     public void SetUp()
@@ -27,8 +26,6 @@ public class GenerateFanProsCoreFieldsReportAsyncTests
             {
                 PlayerID = 123,
                 PlayerName = "Mike Trout",
-                //PrimaryPosition = "OF",
-                //BirthDate = new DateTime(1991, 8, 7)
             }
         };
 
@@ -49,12 +46,6 @@ public class GenerateFanProsCoreFieldsReportAsyncTests
     GivenCsvData_WhenReportCreated_ThenReportShouldHaveCorrectHeaders()
     {
         // Arrange
-
-        //var fakeAppSettings = new FakeAppSettings();
-
-        //var service = new ReportService(fakeAppSettings,
-        //                                _repositoryMock.Object);
-
         // Act
         await _reportService.GenerateFanProsCoreFieldsReportAsync(10);
 
@@ -78,11 +69,6 @@ public class GenerateFanProsCoreFieldsReportAsyncTests
     {
         // Arrange
 
-        //var fakeAppSettings = new FakeAppSettings();
-
-        //var service = new ReportService(fakeAppSettings,
-        //                                _repositoryMock);
-
         // Act
         await _reportService
                 .GenerateFanProsCoreFieldsReportAsync(10);
@@ -101,11 +87,6 @@ public class GenerateFanProsCoreFieldsReportAsyncTests
     {
         // Arrange
         const int rows = 5;
-
-        //var fakeAppSettings = new FakeAppSettings();
-
-        //var service = new ReportService(fakeAppSettings,
-        //    _repositoryMock);
 
         // Act
         await _reportService
@@ -126,7 +107,6 @@ public class GenerateFanProsCoreFieldsReportAsyncTests
     public void GivenCsvFile_WhenPathProvided_ThenFileExist()
     {
         // Arrange
-        //var fakeAppSettings = new FakeAppSettings();
         var basePath = System.AppContext.BaseDirectory;
 
         var relativePath = Path.Combine(
@@ -152,11 +132,6 @@ public class GenerateFanProsCoreFieldsReportAsyncTests
     {
         // Arrange
         const int rows = 1;
-
-        //var fakeAppSettings = new FakeAppSettings();
-
-        //var service =
-        //    new ReportService(fakeAppSettings, _repositoryMock);
 
         // Act
         await _reportService

@@ -7,7 +7,7 @@ namespace FBMngt.IO.Csv;
 public static class CsvReader
 {
     private static List<T> Read<T>(string path)
-    where T : IPlayer, new()
+                                            where T : IPlayer, new()
     {
         var lines = File.ReadAllLines(path, Encoding.UTF8);
 
