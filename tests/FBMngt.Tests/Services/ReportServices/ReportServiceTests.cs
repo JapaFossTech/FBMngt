@@ -47,7 +47,8 @@ public class GenerateFanProsCoreFieldsReportAsyncTests
     {
         // Arrange
         // Act
-        await _reportService.GenerateFanProsCoreFieldsReportAsync(10);
+        await _reportService
+            .GenerateFanProsCoreFieldsReportAsync(10);
 
         // Assert
         var filePath = Path.Combine(

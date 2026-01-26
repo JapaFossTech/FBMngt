@@ -21,7 +21,7 @@ public class FakeAppSettings : IAppSettings
         _configSettings = new ConfigSettings(this);
 
         ReportPath = "C:\\Users\\Master2022\\Documents\\"
-                    +"Javier\\FantasyBaseball\\Logs"; ;
+                    +"Javier\\FantasyBaseball\\Logs\\Test"; ;
         FanPros_RelativePath = "FanPros";
         ImportedFilesPath = "C:\\Users\\Master2022\\Documents"
                 +"\\Javier\\FantasyBaseball\\ImportedFiles";
