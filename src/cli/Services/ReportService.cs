@@ -9,12 +9,14 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace FBMngt.Services;
 
+// Model output
 public sealed class ReportResult<TReportRow>
 {
     public required List<TReportRow> Rows { get; init; }
     public required List<string> Lines { get; init; }
 }
 
+// Base pipeline
 public abstract class ReportBase<TInput, TReportRow>
     where TInput : IPlayer
 {
@@ -72,6 +74,7 @@ public abstract class ReportBase<TInput, TReportRow>
     protected abstract Task WriteAsync(List<string> lines);
 }
 
+// FanPros
 public class FanProsCoreFieldsReport
     : ReportBase<FanProsPlayer, FanProsPlayer>
 {
@@ -123,6 +126,22 @@ public class FanProsCoreFieldsReport
 
         return Task.CompletedTask;
     }
+}
+
+// Z-scores helper classes
+public class CombinedZScoreRow
+{
+    public int? PlayerID { get; set; }
+    public string PlayerName { get; set; } = "";
+    public string Position { get; set; } = "";
+
+    public double ZR_ZW { get; set; }
+    public double ZHR_ZSV { get; set; }
+    public double ZRBI_ZK { get; set; }
+    public double ZSB_ZERA { get; set; }
+    public double ZAVG_ZWHIP { get; set; }
+
+    public double TotalZ { get; set; }
 }
 
 public class ZScorePitcherFileReport
@@ -278,7 +297,124 @@ public class ZScoreBatterFileReport
     }
 }
 
+public class ZScoreCombinedReport
+{
+    private readonly ConfigSettings _configSettings;
 
+    public ZScoreCombinedReport(IAppSettings appSettings)
+    {
+        _configSettings = new ConfigSettings(appSettings);
+    }
+
+    public async Task WriteAsync(
+        List<SteamerPitcherProjection> pitchers,
+        List<SteamerBatterProjection> hitters)
+    {
+        // 1️ Build combined rows
+        List<CombinedZScoreRow> rows =
+            BuildCombinedRows(pitchers, hitters);
+
+        // 2️ Format TSV
+        List<string> lines =
+            FormatCombinedReport(rows);
+
+        // 3️ Persist
+        string path = Path.Combine(
+            _configSettings.AppSettings.ReportPath,
+            $"{AppConst.APP_NAME}_Combined_ZScores_" +
+            $"{_configSettings.AppSettings.SeasonYear}.tsv");
+
+        await File.WriteAllLinesAsync(path, lines);
+
+        Console.WriteLine("Combined Z-score report generated:");
+        Console.WriteLine(path);
+    }
+
+    // Build combined rows
+
+    private static List<CombinedZScoreRow> BuildCombinedRows(
+        List<SteamerPitcherProjection> pitchers,
+        List<SteamerBatterProjection> hitters)
+    {
+        List<CombinedZScoreRow> rows = new();
+
+        rows.AddRange(
+            pitchers.Select(FromPitcher));
+
+        rows.AddRange(
+            hitters.Select(FromHitter));
+
+        return rows
+            .OrderByDescending(r => r.TotalZ)
+            .ToList();
+    }
+
+    // Mapping logic (critical)
+
+    private static CombinedZScoreRow FromPitcher(
+        SteamerPitcherProjection p)
+    {
+        return new CombinedZScoreRow
+        {
+            PlayerID = p.PlayerID,
+            PlayerName = p.PlayerName,
+            Position = "P",
+
+            // Pitcher meaning
+            ZR_ZW = p.Z_W,
+            ZHR_ZSV = p.Z_K,
+            ZRBI_ZK = p.Z_SV,
+            ZSB_ZERA = p.Z_ERA,
+            ZAVG_ZWHIP = p.Z_WHIP,
+
+            TotalZ = p.TotalZ
+        };
+    }
+
+    private static CombinedZScoreRow FromHitter(
+        SteamerBatterProjection h)
+    {
+        return new CombinedZScoreRow
+        {
+            PlayerID = h.PlayerID,
+            PlayerName = h.PlayerName,
+            Position = "B",
+
+            // Hitter meaning
+            ZR_ZW = h.Z_R,
+            ZHR_ZSV = h.Z_HR,
+            ZRBI_ZK = h.Z_RBI,
+            ZSB_ZERA = h.Z_SB,
+            ZAVG_ZWHIP = h.Z_AVG,
+
+            TotalZ = h.TotalZ
+        };
+    }
+
+    // Output formatting
+
+    private static List<string> FormatCombinedReport(
+        List<CombinedZScoreRow> rows)
+    {
+        List<string> lines = new();
+
+        lines.Add(
+            "PlayerID\tName\tPos\t" +
+            "ZR_ZW\tZHR_ZSV\tZRBI_ZK\tZSB_ZERA\tZAVG_ZWHIP\tTotalZ");
+
+        foreach (CombinedZScoreRow r in rows)
+        {
+            lines.Add(
+                $"{r.PlayerID}\t{r.PlayerName}\t{r.Position}\t" +
+                $"{r.ZR_ZW:F2}\t{r.ZHR_ZSV:F2}\t{r.ZRBI_ZK:F2}\t" +
+                $"{r.ZSB_ZERA:F2}\t{r.ZAVG_ZWHIP:F2}\t{r.TotalZ:F2}");
+        }
+
+        return lines;
+    }
+}
+
+// Service
 public class ReportService
 {
     private readonly ConfigSettings _configSettings;
@@ -308,9 +444,11 @@ public class ReportService
         ReportResult<SteamerPitcherProjection> pitcherResult =
             await pitcherReport.GenerateAndWriteAsync();
 
-        //await _combinedReport.WriteAsync(
-        //    pitcherResult.Rows,
-        //    hitterResult.Rows);
+        var combinedReport = new ZScoreCombinedReport(
+                                                _configSettings.AppSettings);
+
+        await combinedReport.WriteAsync(pitcherResult.Rows,
+                                        hitterResult.Rows);
     }
 
     // FanProsCoreFields

@@ -2,7 +2,7 @@
   "profiles": {
     "FBMngt": {
       "commandName": "Project",
-      "commandLineArgs": "report --FanProsCoreFields --rows 2500"
+      "commandLineArgs": "report --zscores"
     }
   }
 }
