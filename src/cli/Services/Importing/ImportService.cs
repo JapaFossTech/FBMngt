@@ -110,7 +110,7 @@ public class ImportService
 
         foreach (var csv in csvDataLines)
         {
-            if (!nameLookup.Contains(csv.PlayerName.Trim()))
+            if (!nameLookup.Contains(csv.PlayerName!.Trim()))
             {
                 unmatched.Add(csv.PlayerName);
                 continue;
@@ -124,14 +124,15 @@ public class ImportService
             var dbPlayer = dbPlayers.FirstOrDefault(p =>
                 string.Equals(
                     p.PlayerName?.Trim(),
-                    fanPros.PlayerName.Trim(),
+                    fanPros.PlayerName!.Trim(),
                     StringComparison.OrdinalIgnoreCase));
 
             if (dbPlayer == null)
                 continue;
 
             // Resolve CSV team
-            var resolvedCsvTeam = teamResolver.Resolve(fanPros.Team);
+            var resolvedCsvTeam = teamResolver
+                                    .Resolve(fanPros.Team);
             if (!resolvedCsvTeam.IsResolved)
                 continue;
 
@@ -159,10 +160,12 @@ public class ImportService
             {
                 mismatches.Add(new RosterMismatch
                 {
-                    PlayerName = fanPros.PlayerName,
-                    CsvTeamAbbrev = teamById[resolvedCsvTeam.TeamId.Value],
+                    PlayerName = fanPros.PlayerName!,
+                    CsvTeamAbbrev = 
+                        teamById[resolvedCsvTeam.TeamId!.Value],
                     CsvTeamId = resolvedCsvTeam.TeamId.Value,
-                    DbTeamAbbrev = teamById[resolvedDbTeam.TeamId.Value],
+                    DbTeamAbbrev = 
+                        teamById[resolvedDbTeam.TeamId!.Value],
                     DbTeamId = resolvedDbTeam.TeamId.Value
                 });
             }

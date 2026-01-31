@@ -4,8 +4,8 @@
 public class CombinedZScoreRow
 {
     public int? PlayerID { get; set; }
-    public string PlayerName { get; set; } = "";
-    public string Position { get; set; } = "";
+    public string? PlayerName { get; set; }
+    public string? Position { get; set; }
 
     public double ZR_ZW { get; set; }
     public double ZHR_ZSV { get; set; }

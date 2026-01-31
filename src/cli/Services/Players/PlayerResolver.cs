@@ -33,9 +33,9 @@ public class PlayerResolver
         }
 
         // 3️ Resolve PlayerID for each input player
-        foreach (var player in inputPlayers)
+        foreach (IPlayer player in inputPlayers)
         {
-            var key = player.PlayerName.Trim();
+            var key = player.PlayerName!.Trim();
 
             if (lookup.TryGetValue(key, out var dbPlayer))
             {

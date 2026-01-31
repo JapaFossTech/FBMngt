@@ -9,7 +9,7 @@ namespace FBMngt.Models;
 public class SteamerBatterProjection : IPlayer
 {
     public int? PlayerID { get; set; }
-    public string PlayerName { get; set; } = string.Empty;
+    public string? PlayerName { get; set; }
 
     public int PA { get; set; }
     public int R { get; set; }
@@ -27,13 +27,14 @@ public class SteamerBatterProjection : IPlayer
     public double Z_AVG { get; set; }
 
     public double TotalZ { get; set; }
-    public string? Team { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public string? Team { get; set; }
+    public string? Position { get; set; }
 }
 
 public class SteamerPitcherProjection : IPlayer
 {
     public int? PlayerID { get; set; }
-    public string PlayerName { get; set; } = string.Empty;
+    public string? PlayerName { get; set; }
 
     public double IP { get; set; }
     public int W { get; set; }
@@ -52,7 +53,8 @@ public class SteamerPitcherProjection : IPlayer
     public double Z_WHIP { get; set; }
 
     public double TotalZ { get; set; }
-    public string? Team { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public string? Team { get; set; }
+    public string? Position { get; set; }
 }
 
 

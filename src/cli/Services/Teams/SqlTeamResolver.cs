@@ -10,18 +10,21 @@ public sealed class SqlTeamResolver : ITeamResolver
         _teams = teams;
     }
 
-    public ResolvedTeam Resolve(string teamAbbrev)
+    public ResolvedTeam Resolve(string? teamAbbrev)
     {
         if (string.IsNullOrWhiteSpace(teamAbbrev))
             return ResolvedTeam.Unresolved();
 
-        var t = _teams.FirstOrDefault(x =>
-            string.Equals(x.MlbOrgAbbrev, teamAbbrev, StringComparison.OrdinalIgnoreCase));
+        Team? t = _teams.FirstOrDefault(x =>
+            string.Equals(x.MlbOrgAbbrev, 
+                          teamAbbrev, 
+                          StringComparison.OrdinalIgnoreCase));
 
         if (t == null || string.IsNullOrWhiteSpace(t.MlbOrgId))
             return ResolvedTeam.Unresolved();
 
-        return ResolvedTeam.Resolved(int.Parse(t.MlbOrgId), t.MlbOrgAbbrev);
+        return ResolvedTeam.Resolved(int.Parse(t.MlbOrgId), 
+                                     t.MlbOrgAbbrev);
     }
 }
 

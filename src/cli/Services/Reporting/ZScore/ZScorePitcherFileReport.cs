@@ -40,7 +40,7 @@ public class ZScorePitcherFileReport
         // Build FanPros pitcher ID set
         HashSet<int> fanProsPitcherIds =
             _fanProsPlayers
-                .Where(p => IsPitcherRole(p.Position))
+                .Where(p => p.IsPitcher())
                 .Where(p => p.PlayerID.HasValue)
                 .Select(p => p.PlayerID!.Value)
                 .ToHashSet();
@@ -95,14 +95,4 @@ public class ZScorePitcherFileReport
 
         return Task.CompletedTask;
     }
-    private static bool IsPitcherRole(string? position)
-    {
-        if (string.IsNullOrWhiteSpace(position))
-            return false;
-
-        return position.StartsWith("SP", AppConst.IGNORE_CASE)
-            || position.StartsWith("RP", AppConst.IGNORE_CASE)
-            || position.Equals("P", AppConst.IGNORE_CASE);
-    }
-
 }

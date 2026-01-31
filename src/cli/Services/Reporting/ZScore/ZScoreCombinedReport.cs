@@ -98,7 +98,7 @@ public sealed class ZScoreCombinedReport
             int playerId = fanPros.PlayerID.Value;
 
             // FanPros roster slot defines role (SP1, RP2, Util, etc.)
-            bool isPitcher = IsPitcherRole(fanPros.Position);
+            bool isPitcher = fanPros.IsPitcher();
 
             CombinedZScoreRow? row = null;
 
@@ -196,14 +196,4 @@ public sealed class ZScoreCombinedReport
 
         return lines;
     }
-    private static bool IsPitcherRole(string? fanProsPosition)
-    {
-        if (string.IsNullOrWhiteSpace(fanProsPosition))
-            return false;
-
-        return fanProsPosition.StartsWith("SP", AppConst.IGNORE_CASE)
-            || fanProsPosition.StartsWith("RP", AppConst.IGNORE_CASE)
-            || fanProsPosition.Equals("P", AppConst.IGNORE_CASE);
-    }
-
 }

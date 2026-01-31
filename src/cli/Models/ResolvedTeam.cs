@@ -18,6 +18,6 @@ public sealed class ResolvedTeam
     public static ResolvedTeam Unresolved()
         => new(false, null, null);
 
-    public static ResolvedTeam Resolved(int teamId, string teamAbbreviation)
+    public static ResolvedTeam Resolved(int teamId, string? teamAbbreviation)
         => new(true, teamId, teamAbbreviation);
 }

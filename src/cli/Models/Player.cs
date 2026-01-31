@@ -3,8 +3,9 @@
 public interface IPlayer
 {
     int? PlayerID { get; set; }
-    string PlayerName { get; set; }
+    string? PlayerName { get; set; }
     string? Team { get; set; }
+    string? Position { get; set; }
 }
 public class Player: IPlayer
 {
@@ -14,5 +15,6 @@ public class Player: IPlayer
     public string? Aka2 { get; set; }
 
     public string? organization_id { get; set; }
-    public string? Team { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public string? Team { get; set; }
+    public string? Position { get; set; }
 }
