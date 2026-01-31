@@ -1,6 +1,6 @@
 ﻿using FBMngt.Models;
 
-namespace FBMngt.Services;
+namespace FBMngt.Services.Reporting.ZScore;
 
 public static class ZScoreService
 {
@@ -32,7 +32,7 @@ public static class ZScoreService
             h.Z_HR = Z(h.HR, mean.HR, std.HR);
             h.Z_RBI = Z(h.RBI, mean.RBI, std.RBI);
             h.Z_SB = Z(h.SB, mean.SB, std.SB);
-            h.Z_AVG = ((h.AVG - mean.AVG) * h.PA)
+            h.Z_AVG = (h.AVG - mean.AVG) * h.PA
                         / (std.AVG * mean.PA);
 
             h.TotalZ =
@@ -73,10 +73,10 @@ public static class ZScoreService
 
             // Lower is better
             //p.Z_ERA = Z(mean.ERA - p.ERA, 0, std.ERA);
-            p.Z_ERA = ((mean.ERA - p.ERA) * p.IP)
+            p.Z_ERA = (mean.ERA - p.ERA) * p.IP
                         / (std.ERA * mean.IP);
             //p.Z_WHIP = Z(mean.WHIP - p.WHIP, 0, std.WHIP);
-            p.Z_WHIP = ((mean.WHIP - p.WHIP) * p.IP)
+            p.Z_WHIP = (mean.WHIP - p.WHIP) * p.IP
                         / (std.WHIP * mean.IP);
 
             p.TotalZ =

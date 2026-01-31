@@ -1,5 +1,6 @@
 ﻿using FBMngt.Data;
 using FBMngt.Services;
+using FBMngt.Services.Reporting;
 
 namespace FBMngt.Commands;
 

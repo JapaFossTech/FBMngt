@@ -4,7 +4,7 @@ using FBMngt.Models;
 using FBMngt.Services.Roster;
 using FBMngt.Services.Teams;
 
-namespace FBMngt.Services;
+namespace FBMngt.Services.Importing;
 
 public class ImportService
 {

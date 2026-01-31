@@ -1,7 +1,7 @@
 ﻿using FBMngt.Data;
 using FBMngt.Models;
-using FBMngt.Services;
 using FBMngt.Services.Players;
+using FBMngt.Services.Reporting;
 using FBMngt.Tests.TestDoubles;
 using Moq;
 
