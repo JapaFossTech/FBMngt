@@ -79,19 +79,22 @@ public sealed class GenerateZScoreReportsAsyncTests
             };
 
         _fanProsPlayers =
-            new List<FanProsPlayer>
-            {
-                new FanProsPlayer
-                {
-                    PlayerID = 1,
-                    PlayerName = "Andres Munoz"
-                },
-                new FanProsPlayer
-                {
-                    PlayerID = 2,
-                    PlayerName = "Jurickson Profar"
-                }
-            };
+    new List<FanProsPlayer>
+    {
+        new FanProsPlayer
+        {
+            PlayerID = 1,
+            PlayerName = "Andres Munoz",
+            Position = "RP1" // 👈 REQUIRED
+        },
+        new FanProsPlayer
+        {
+            PlayerID = 2,
+            PlayerName = "Jurickson Profar",
+            Position = "Util"
+        }
+    };
+
     }
 
     [Test]
@@ -113,9 +116,8 @@ public sealed class GenerateZScoreReportsAsyncTests
     }
 
     [Test]
-    [Ignore("FanPros population not yet integrated into Z-score pipeline")]
     public async Task
-    GivenFanProsAndSteamerOrderMismatch_WhenGeneratingZScores_ThenAllFanProsPlayersAreScored()
+    GivenFanProsPlayersWithMatchingProjections_WhenGeneratingZScores_ThenAllAreScored()
     {
         // Act
         ReportResult<CombinedZScoreRow> result =
