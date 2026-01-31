@@ -9,4 +9,5 @@ public class FanProsPlayer : IPlayer
     //Non IPlayer
     public string? Position { get; set; }
     public int Rank { get; set; }
+    public bool IsPitcher { get; init; }
 }

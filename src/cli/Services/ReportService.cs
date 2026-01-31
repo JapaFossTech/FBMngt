@@ -12,8 +12,8 @@ namespace FBMngt.Services;
 // Model output
 public sealed class ReportResult<TReportRow>
 {
-    public required List<TReportRow> Rows { get; init; }
-    public required List<string> Lines { get; init; }
+    public required List<TReportRow> ReportRows { get; init; }
+    public required List<string> StringLines { get; init; }
 }
 
 // Base pipeline
@@ -50,8 +50,8 @@ public abstract class ReportBase<TInput, TReportRow>
 
         return new ReportResult<TReportRow>
         {
-            Rows = reportRows,
-            Lines = lines
+            ReportRows = reportRows,
+            StringLines = lines
         };
     }
 
@@ -75,6 +75,82 @@ public abstract class ReportBase<TInput, TReportRow>
 }
 
 // FanPros
+public sealed class FanProsPopulationBuilder
+{
+    public (
+        List<SteamerPitcherProjection> Pitchers,
+        List<SteamerBatterProjection> Hitters
+    )
+    BuildPopulation(
+        List<FanProsPlayer> fanProsPlayers,
+        List<SteamerPitcherProjection> steamerPitchers,
+        List<SteamerBatterProjection> steamerHitters)
+    {
+        Dictionary<int, SteamerPitcherProjection> pitcherMap =
+            steamerPitchers.ToDictionary(p => p.PlayerID.Value);
+
+        Dictionary<int, SteamerBatterProjection> hitterMap =
+            steamerHitters.ToDictionary(h => h.PlayerID.Value);
+
+        List<SteamerPitcherProjection> pitchers = new();
+        List<SteamerBatterProjection> hitters = new();
+
+        foreach (FanProsPlayer fp in fanProsPlayers)
+        {
+            if (fp.IsPitcher)
+            {
+                pitchers.Add(
+                    pitcherMap.TryGetValue(fp.PlayerID.Value, out var p)
+                        ? p
+                        : CreateEmptyPitcher(fp));
+            }
+            else
+            {
+                hitters.Add(
+                    hitterMap.TryGetValue(fp.PlayerID.Value, out var h)
+                        ? h
+                        : CreateEmptyHitter(fp));
+            }
+        }
+
+        return (pitchers, hitters);
+    }
+
+    // ----------------------------
+    // ZERO-FILL GUARDRAILS
+    // ----------------------------
+
+    private static SteamerPitcherProjection CreateEmptyPitcher(
+        FanProsPlayer fp)
+    {
+        return new SteamerPitcherProjection
+        {
+            PlayerID = fp.PlayerID,
+            PlayerName = fp.PlayerName,
+            W = 0,
+            SV = 0,
+            K = 0,
+            ERA = 0,
+            WHIP = 0
+        };
+    }
+
+    private static SteamerBatterProjection CreateEmptyHitter(
+        FanProsPlayer fp)
+    {
+        return new SteamerBatterProjection
+        {
+            PlayerID = fp.PlayerID,
+            PlayerName = fp.PlayerName,
+            R = 0,
+            HR = 0,
+            RBI = 0,
+            SB = 0,
+            AVG = 0
+        };
+    }
+}
+
 public class FanProsCoreFieldsReport
     : ReportBase<FanProsPlayer, FanProsPlayer>
 {
@@ -143,18 +219,65 @@ public class CombinedZScoreRow
 
     public double TotalZ { get; set; }
 }
+public static class ZScorePopulationValidator
+{
+    public static void ValidateHitters(
+        IEnumerable<SteamerBatterProjection> hitters)
+    {
+        var invalid = hitters
+            .Where(h =>
+                h.Z_R == 0 ||
+                h.Z_HR == 0 ||
+                h.Z_RBI == 0 ||
+                h.Z_SB == 0 ||
+                h.Z_AVG == 0 ||
+                h.TotalZ == 0)
+            .ToList();
+
+        if (invalid.Any())
+        {
+            throw new InvalidOperationException(
+                $"Z-score validation failed for {invalid.Count} hitters. " +
+                "FanPros population integrity violated.");
+        }
+    }
+
+    public static void ValidatePitchers(
+        IEnumerable<SteamerPitcherProjection> pitchers)
+    {
+        var invalid = pitchers
+            .Where(p =>
+                p.Z_W == 0 ||
+                p.Z_SV == 0 ||
+                p.Z_K == 0 ||
+                p.Z_ERA == 0 ||
+                p.Z_WHIP == 0 ||
+                p.TotalZ == 0)
+            .ToList();
+
+        if (invalid.Any())
+        {
+            throw new InvalidOperationException(
+                $"Z-score validation failed for {invalid.Count} pitchers. " +
+                "FanPros population integrity violated.");
+        }
+    }
+}
 
 public class ZScorePitcherFileReport
     : ReportBase<SteamerPitcherProjection, SteamerPitcherProjection>
 {
     private readonly ConfigSettings _configSettings;
+    private readonly List<FanProsPlayer> _fanProsPlayers;
 
     public ZScorePitcherFileReport(
         IAppSettings appSettings,
-        IPlayerRepository playerRepository)
+        IPlayerRepository playerRepository,
+        List<FanProsPlayer> fanProsPlayers)
         : base(new PlayerResolver(playerRepository))
     {
         _configSettings = new ConfigSettings(appSettings);
+        _fanProsPlayers = fanProsPlayers;
     }
 
     protected override Task<List<SteamerPitcherProjection>> ReadAsync(int rows)
@@ -173,11 +296,23 @@ public class ZScorePitcherFileReport
     protected override Task<List<SteamerPitcherProjection>> TransformAsync(
         List<SteamerPitcherProjection> input)
     {
-        // Limit population
-        List<SteamerPitcherProjection> pitchers =
-            input.Take(120).ToList();
+        // Build FanPros pitcher ID set
+        HashSet<int> fanProsPitcherIds =
+            _fanProsPlayers
+                .Where(p => IsPitcherRole(p.Position))
+                .Where(p => p.PlayerID.HasValue)
+                .Select(p => p.PlayerID!.Value)
+                .ToHashSet();
 
-        // Calculate Z-scores
+        // Filter projections to FanPros population
+        List<SteamerPitcherProjection> pitchers =
+            input
+                .Where(p =>
+                    p.PlayerID.HasValue &&
+                    fanProsPitcherIds.Contains(p.PlayerID.Value))
+                .ToList();
+
+        // Calculate Z-scores ONLY on FanPros pitchers
         ZScoreService.CalculatePitcherZScores(pitchers);
 
         return Task.FromResult(pitchers);
@@ -219,18 +354,31 @@ public class ZScorePitcherFileReport
 
         return Task.CompletedTask;
     }
+    private static bool IsPitcherRole(string? position)
+    {
+        if (string.IsNullOrWhiteSpace(position))
+            return false;
+
+        return position.StartsWith("SP", AppConst.IGNORE_CASE)
+            || position.StartsWith("RP", AppConst.IGNORE_CASE)
+            || position.Equals("P", AppConst.IGNORE_CASE);
+    }
+
 }
 public class ZScoreBatterFileReport
     : ReportBase<SteamerBatterProjection, SteamerBatterProjection>
 {
     private readonly ConfigSettings _configSettings;
+    private readonly List<FanProsPlayer> _fanProsPlayers;
 
     public ZScoreBatterFileReport(
         IAppSettings appSettings,
-        IPlayerRepository playerRepository)
+        IPlayerRepository playerRepository,
+        List<FanProsPlayer> fanProsPlayers)
         : base(new PlayerResolver(playerRepository))
     {
         _configSettings = new ConfigSettings(appSettings);
+        _fanProsPlayers = fanProsPlayers;
     }
 
     protected override Task<List<SteamerBatterProjection>> ReadAsync(int rows)
@@ -249,14 +397,26 @@ public class ZScoreBatterFileReport
     protected override Task<List<SteamerBatterProjection>> TransformAsync(
         List<SteamerBatterProjection> input)
     {
-        // Limit population
-        List<SteamerBatterProjection> batters =
-            input.Take(150).ToList();
+        // Build FanPros hitter ID set
+        HashSet<int> fanProsHitterIds =
+            _fanProsPlayers
+                .Where(p => !IsPitcherRole(p.Position))
+                .Where(p => p.PlayerID.HasValue)
+                .Select(p => p.PlayerID!.Value)
+                .ToHashSet();
 
-        // Calculate Z-scores
-        ZScoreService.CalculateHitterZScores(batters);
+        // Filter projections to FanPros population
+        List<SteamerBatterProjection> hitters =
+            input
+                .Where(h =>
+                    h.PlayerID.HasValue &&
+                    fanProsHitterIds.Contains(h.PlayerID.Value))
+                .ToList();
 
-        return Task.FromResult(batters);
+        // Calculate Z-scores ONLY on FanPros hitters
+        ZScoreService.CalculateHitterZScores(hitters);
+
+        return Task.FromResult(hitters);
     }
 
     protected override List<string> FormatReport(
@@ -295,9 +455,17 @@ public class ZScoreBatterFileReport
 
         return Task.CompletedTask;
     }
-}
+    private static bool IsPitcherRole(string? position)
+    {
+        if (string.IsNullOrWhiteSpace(position))
+            return false;
 
-public class ZScoreCombinedReport
+        return position.StartsWith("SP", AppConst.IGNORE_CASE)
+            || position.StartsWith("RP", AppConst.IGNORE_CASE)
+            || position.Equals("P", AppConst.IGNORE_CASE);
+    }
+}
+public sealed class ZScoreCombinedReport
 {
     private readonly ConfigSettings _configSettings;
 
@@ -306,64 +474,144 @@ public class ZScoreCombinedReport
         _configSettings = new ConfigSettings(appSettings);
     }
 
-    public async Task WriteAsync(
+    // TEST-FRIENDLY ENTRY POINT
+    public Task<ReportResult<CombinedZScoreRow>> BuildAsync(
+        List<FanProsPlayer> fanProsPlayers,
         List<SteamerPitcherProjection> pitchers,
         List<SteamerBatterProjection> hitters)
     {
-        // 1️ Build combined rows
         List<CombinedZScoreRow> rows =
-            BuildCombinedRows(pitchers, hitters);
+            BuildCombinedRows(
+                fanProsPlayers,
+                pitchers,
+                hitters);
 
-        // 2️ Format TSV
         List<string> lines =
             FormatCombinedReport(rows);
 
-        // 3️ Persist
+        ReportResult<CombinedZScoreRow> result =
+            new ReportResult<CombinedZScoreRow>
+            {
+                ReportRows = rows,
+                StringLines = lines
+            };
+
+        return Task.FromResult(result);
+    }
+
+    // CLI ENTRY POINT
+    public async Task WriteAsync(
+        List<FanProsPlayer> fanProsPlayers,
+        List<SteamerPitcherProjection> pitchers,
+        List<SteamerBatterProjection> hitters)
+    {
+        ReportResult<CombinedZScoreRow> result =
+            await BuildAsync(
+                fanProsPlayers,
+                pitchers,
+                hitters);
+
         string path = Path.Combine(
             _configSettings.AppSettings.ReportPath,
             $"{AppConst.APP_NAME}_Combined_ZScores_" +
             $"{_configSettings.AppSettings.SeasonYear}.tsv");
 
-        await File.WriteAllLinesAsync(path, lines);
+        await File.WriteAllLinesAsync(
+            path,
+            result.StringLines);
 
         Console.WriteLine("Combined Z-score report generated:");
         Console.WriteLine(path);
     }
 
-    // Build combined rows
-
+    // FanPros defines population, Steamer defines metrics
     private static List<CombinedZScoreRow> BuildCombinedRows(
+        List<FanProsPlayer> fanProsPlayers,
         List<SteamerPitcherProjection> pitchers,
         List<SteamerBatterProjection> hitters)
     {
+        Dictionary<int, SteamerPitcherProjection> pitcherLookup =
+            pitchers
+                .Where(p => p.PlayerID.HasValue)
+                .ToDictionary(
+                    p => p.PlayerID!.Value,
+                    p => p);
+
+        //var x = hitters.Where(p => p.PlayerID == 1944);
+
+        Dictionary<int, SteamerBatterProjection> hitterLookup =
+            hitters
+                .Where(h => h.PlayerID.HasValue)
+                .ToDictionary(
+                    h => h.PlayerID!.Value,
+                    h => h);
+
         List<CombinedZScoreRow> rows = new();
 
-        rows.AddRange(
-            pitchers.Select(FromPitcher));
+        foreach (FanProsPlayer fanPros in fanProsPlayers)
+        {
+            if (!fanPros.PlayerID.HasValue)
+            {
+                Console.WriteLine(
+                    $"FanPros player '{fanPros.PlayerName}' has "
+                    +"null PlayerID. Is not included in combined report.");
+                continue;
+            }
 
-        rows.AddRange(
-            hitters.Select(FromHitter));
+            int playerId = fanPros.PlayerID.Value;
+
+            // FanPros roster slot defines role (SP1, RP2, Util, etc.)
+            bool isPitcher = IsPitcherRole(fanPros.Position);
+
+            CombinedZScoreRow? row = null;
+
+            if (isPitcher)
+            {
+                if (pitcherLookup.TryGetValue(playerId, out SteamerPitcherProjection? pitcher))
+                {
+                    row = FromPitcher(pitcher);
+                }
+            }
+            else
+            {
+                if (hitterLookup.TryGetValue(playerId, out SteamerBatterProjection? hitter))
+                {
+                    row = FromHitter(hitter);
+                }
+            }
+
+            // Projection coverage gap → skip but continue
+            if (row == null)
+            {
+                // TODO: replace with ILogger once wired
+                Console.WriteLine(
+                    $"[WARN] FanPros player '{fanPros.PlayerName}' (ID {playerId}) " +
+                    $"has no {(isPitcher ? "pitcher" : "hitter")} projections — skipped");
+
+                continue;
+            }
+
+            rows.Add(row);
+        }
 
         return rows
             .OrderByDescending(r => r.TotalZ)
             .ToList();
     }
 
-    // Mapping logic (critical)
-
+    // Pitcher mapper
     private static CombinedZScoreRow FromPitcher(
         SteamerPitcherProjection p)
     {
         return new CombinedZScoreRow
         {
-            PlayerID = p.PlayerID,
+            PlayerID = p.PlayerID!.Value,
             PlayerName = p.PlayerName,
             Position = "P",
 
-            // Pitcher meaning
             ZR_ZW = p.Z_W,
-            ZHR_ZSV = p.Z_K,
-            ZRBI_ZK = p.Z_SV,
+            ZHR_ZSV = p.Z_SV,
+            ZRBI_ZK = p.Z_K,
             ZSB_ZERA = p.Z_ERA,
             ZAVG_ZWHIP = p.Z_WHIP,
 
@@ -371,16 +619,16 @@ public class ZScoreCombinedReport
         };
     }
 
+    // Hitter mapper
     private static CombinedZScoreRow FromHitter(
         SteamerBatterProjection h)
     {
         return new CombinedZScoreRow
         {
-            PlayerID = h.PlayerID,
+            PlayerID = h.PlayerID!.Value,
             PlayerName = h.PlayerName,
             Position = "B",
 
-            // Hitter meaning
             ZR_ZW = h.Z_R,
             ZHR_ZSV = h.Z_HR,
             ZRBI_ZK = h.Z_RBI,
@@ -391,8 +639,7 @@ public class ZScoreCombinedReport
         };
     }
 
-    // Output formatting
-
+    // TSV formatting
     private static List<string> FormatCombinedReport(
         List<CombinedZScoreRow> rows)
     {
@@ -412,6 +659,16 @@ public class ZScoreCombinedReport
 
         return lines;
     }
+    private static bool IsPitcherRole(string? fanProsPosition)
+    {
+        if (string.IsNullOrWhiteSpace(fanProsPosition))
+            return false;
+
+        return fanProsPosition.StartsWith("SP", AppConst.IGNORE_CASE)
+            || fanProsPosition.StartsWith("RP", AppConst.IGNORE_CASE)
+            || fanProsPosition.Equals("P", AppConst.IGNORE_CASE);
+    }
+
 }
 
 // Service
@@ -420,35 +677,56 @@ public class ReportService
     private readonly ConfigSettings _configSettings;
     private readonly IPlayerRepository _playerRepository;
 
-    public ReportService(IAppSettings appSettings, 
+    public ReportService(IAppSettings appSettings,
                         IPlayerRepository playerRepository)
     {
         _configSettings = new ConfigSettings(appSettings);
         _playerRepository = playerRepository;
     }
-
     // ZScoreReports
     public async Task GenerateZScoreReportsAsync()
     {
-        var hitterReport = new ZScoreBatterFileReport(
-                                            _configSettings.AppSettings,
-                                            _playerRepository
-                                            );
+        // Generate FanPros report FIRST (source of truth)
+        FanProsCoreFieldsReport fanProsReport =
+            new FanProsCoreFieldsReport(
+                _configSettings.AppSettings,
+                _playerRepository);
+
+        ReportResult<FanProsPlayer> fanProsResult =
+            await fanProsReport.GenerateAndWriteAsync();
+
+        List<FanProsPlayer> fanProsPlayers =
+            fanProsResult.ReportRows;
+
+        // Generate hitter Z-scores (FanPros-driven)
+        ZScoreBatterFileReport hitterReport =
+            new ZScoreBatterFileReport(
+                _configSettings.AppSettings,
+                _playerRepository,
+                fanProsPlayers);
+
         ReportResult<SteamerBatterProjection> hitterResult =
             await hitterReport.GenerateAndWriteAsync();
-        //
-        var pitcherReport = new ZScorePitcherFileReport(
-                                                _configSettings.AppSettings,
-                                                _playerRepository);
+
+        // Generate pitcher Z-scores (FanPros-driven)
+        ZScorePitcherFileReport pitcherReport =
+            new ZScorePitcherFileReport(
+                _configSettings.AppSettings,
+                _playerRepository,
+                fanProsPlayers);
 
         ReportResult<SteamerPitcherProjection> pitcherResult =
             await pitcherReport.GenerateAndWriteAsync();
 
-        var combinedReport = new ZScoreCombinedReport(
-                                                _configSettings.AppSettings);
+        // Generate combined report
+        ZScoreCombinedReport combinedReport =
+            new ZScoreCombinedReport(
+                _configSettings.AppSettings);
 
-        await combinedReport.WriteAsync(pitcherResult.Rows,
-                                        hitterResult.Rows);
+        await combinedReport.WriteAsync(
+            fanProsPlayers,
+            pitcherResult.ReportRows,
+            hitterResult.ReportRows);
     }
 
     // FanProsCoreFields
