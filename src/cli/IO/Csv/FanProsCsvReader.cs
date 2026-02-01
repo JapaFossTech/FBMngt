@@ -1,4 +1,5 @@
 ﻿using FBMngt.Models;
+using FBMngt.Services.Importing;
 using Microsoft.VisualBasic.FileIO;
 using System.Text;
 
@@ -7,8 +8,17 @@ namespace FBMngt.IO.Csv;
 public static class FanProsCsvReader
 {
     public static List<FanProsPlayer> Read(
-                                string path, int? maxRows = null)
+                                string path, int? maxRows = 400)
     {
+        //Get the file path for the newest csv file
+        //TODO: Consider decoupling here because Filename normalization is not part of csv read
+        var importFileResolver = new ImportFileResolver();
+        path = importFileResolver.ResolveNewestFilePath(path);
+
+        Console.WriteLine($@"Using FanPros file: 
+                                        {Path.GetFileName(path)}");
+
+        //Continue
         var result = new List<FanProsPlayer>();
 
         using var parser = new TextFieldParser(path, Encoding.UTF8)

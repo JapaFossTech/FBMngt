@@ -108,22 +108,22 @@ public class GenerateFanProsCoreFieldsReportAsyncTests
         // Arrange
         var basePath = AppContext.BaseDirectory;
 
-        var relativePath = Path.Combine(
-            "FanPros",
-            $"FantasyPros_{
-                _fakeAppSettings.SeasonYear
-                }_Draft_ALL_Rankings.csv");
-
-        var fullPath = Path.Combine(basePath, relativePath);
+        var fanProsDir = Path.Combine(basePath, "FanPros");
 
         // Act
-        var exists = File.Exists(fullPath);
+        bool exists =
+            Directory.Exists(fanProsDir) &&
+            Directory.GetFiles(
+                fanProsDir,
+                $"FantasyPros_{_fakeAppSettings.SeasonYear}_Draft_ALL_Rankings*.csv")
+            .Any();
 
         // Assert
         Assert.That(
             exists,
             Is.True,
-            $"Expected CSV file to exist at: {fullPath}");
+            $@"Expected FanPros CSV file to 
+                exist in: {fanProsDir}");
     }
     [Test]
     public async Task 
@@ -155,8 +155,10 @@ public class GenerateFanProsCoreFieldsReportAsyncTests
         Assert.That(columns.Length, Is.GreaterThanOrEqualTo(4));
 
         // core behavior
-        Assert.That(columns[0], Is.EqualTo(string.Empty), "PlayerID should be blank");
-        Assert.That(columns[1], Is.Not.Empty, "Player name must be written from CSV");
+        Assert.That(columns[0], Is.EqualTo(string.Empty), 
+            "PlayerID should be blank");
+        Assert.That(columns[1], Is.Not.Empty, 
+            "Player name must be written from CSV");
 
     }
 }
