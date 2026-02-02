@@ -47,12 +47,7 @@ public class ImportService
         if (fileType != null &&
             fileType.Equals("FanPros", AppConst.IGNORE_CASE))
         {
-            string fullPath = Path.Combine(
-                _configSettings.AppSettings.ImportedFilesPath,
-                fileType,
-                $"FantasyPros_{
-                    _configSettings.AppSettings.SeasonYear
-                    }_Draft_ALL_Rankings.csv");
+            string fullPath = _configSettings.FanPros_Rankings_InputCsv_Path;
 
             var fanProsPlayers =
                 FanProsCsvReader.Read(fullPath, rows ?? 200);
@@ -148,9 +143,9 @@ public class ImportService
                 resolvedDbTeam = teamResolver.Resolve(dbPlayer.organization_id);
             }
 
-            Console.WriteLine(
-    $"{fanPros.PlayerName} | CSV={fanPros.Team} -> {resolvedCsvTeam.TeamId} | " +
-    $"DB={dbPlayer.organization_id} -> {resolvedDbTeam.TeamId}");
+    //        Console.WriteLine(
+    //$"{fanPros.PlayerName} | CSV={fanPros.Team} -> {resolvedCsvTeam.TeamId} | " +
+    //$"DB={dbPlayer.organization_id} -> {resolvedDbTeam.TeamId}");
 
             if (!resolvedDbTeam.IsResolved)
                 continue;

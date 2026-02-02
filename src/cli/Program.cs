@@ -73,7 +73,7 @@ class Program
         Console.WriteLine("Commands:");
         Console.WriteLine("  import --match-column PlayerName");
         Console.WriteLine(
-            @"  import --match-column PLAYER&nbsp;NAME --file-Type FanPros [--show-player] [--rows 150]");
+            @"  import --match-column ""PLAYER NAME"" --file-Type FanPros [--show-player] [--rows 150]");
         Console.WriteLine("  report --zscores");
         Console.WriteLine("  data-integrity players [--dry-run]");
         Console.WriteLine("  report --FanProsCoreFields [--rows 250]");
