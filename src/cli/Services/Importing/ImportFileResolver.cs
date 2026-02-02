@@ -1,16 +1,22 @@
 ﻿namespace FBMngt.Services.Importing;
 
+public enum ImportNormalizationMode
+{
+    ResolveOnly,
+    NormalizeAndResolve
+}
+
 /// <summary>
 /// "Resolver" implies normalization, selection, deterministic
 /// </summary>
 public sealed class ImportFileResolver
 {
     /// <summary>
-    /// Orchestrates:
-    /// 1. Canonical filename archival (date suffix)
-    /// 2. Deterministic newest-file selection
+    /// NormalizeAndResolve must ONLY be used by CLI entry points.
+    /// Libraries and readers must use ResolveOnly.
     /// </summary>
-    public string ResolveNewestFilePath(string inputPath)
+    public string ResolveNewestFilePath(string inputPath,
+                                        ImportNormalizationMode mode)
     {
         // Validate input
         if (inputPath.IsNullOrEmpty())
@@ -28,6 +34,8 @@ public sealed class ImportFileResolver
         if (!directoryInfo.Exists)
             throw new DirectoryNotFoundException(descriptor.Directory);
 
+        EnsureNotBinDirectory(directoryInfo.FullName);
+
         //Get all files (canonical + non-canonical)
         FileInfo[] files = directoryInfo.GetFiles(
                                             descriptor.SearchPattern,
@@ -39,14 +47,17 @@ public sealed class ImportFileResolver
                 $@"No files found matching '{descriptor.SearchPattern}' 
                     in '{descriptor.Directory}'");
 
-        // Step 1: archive canonical file if present
-        ArchiveCanonicalFiles(files, descriptor);
+        if (mode == ImportNormalizationMode.NormalizeAndResolve)
+        {
+            // Step 1: archive canonical file if present
+            ArchiveCanonicalFiles(files, descriptor);
 
-        // Step 2: re-evaluate files after archival
-        files =
-            directoryInfo.GetFiles(
-                descriptor.SearchPattern,
-                SearchOption.TopDirectoryOnly);
+            // Step 2: re-evaluate files after archival
+            files =
+                directoryInfo.GetFiles(
+                    descriptor.SearchPattern,
+                    SearchOption.TopDirectoryOnly);
+        }
 
         // Step 3: select and return newest
         return files
@@ -108,6 +119,18 @@ public sealed class ImportFileResolver
             File.Delete(archivedPath);
 
         canonical.MoveTo(archivedPath);
+    }
+    private static void EnsureNotBinDirectory(string fullPath)
+    {
+        if (fullPath.Contains(
+                Path.DirectorySeparatorChar + "bin" 
+                                            + Path.DirectorySeparatorChar,
+                AppConst.IGNORE_CASE))
+        {
+            throw new InvalidOperationException(
+                @"File normalization must not run against build output 
+                directories.");
+        }
     }
 
 }

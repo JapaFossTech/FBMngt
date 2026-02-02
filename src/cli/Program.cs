@@ -1,4 +1,6 @@
-﻿using FBMngt.Commands;
+﻿using FBMngt;
+using FBMngt.Commands;
+using FBMngt.Services.Importing;
 using Microsoft.Extensions.Configuration;
 using System.Text;
 
@@ -27,15 +29,22 @@ class Program
             return;
         }
 
+        var configSettings = new ConfigSettings(new AppSettings());
+        var resolver = new ImportFileResolver();
+
         var command = args[0].ToLowerInvariant();
 
         switch (command)
         {
             case "import":  //import --match-column PlayerName --show-player
+                EnsureFanProsInputIsNormalized(resolver, configSettings);
+
                 await ImportCommand
                         .ExecuteAsync(args.Skip(1).ToArray());
                 break;
             case "report":
+                EnsureFanProsInputIsNormalized(resolver, configSettings);
+
                 await ReportCommand
                         .ExecuteAsync(args.Skip(1).ToArray());
                 break;
@@ -49,6 +58,13 @@ class Program
                 ShowHelp();
                 break;
         }
+    }
+
+    static void EnsureFanProsInputIsNormalized(ImportFileResolver resolver,
+                                        ConfigSettings config)
+    {
+        resolver.ResolveNewestFilePath(config.FanPros_Rankings_InputCsv_Path,
+                                       ImportNormalizationMode.NormalizeAndResolve);
     }
 
     static void ShowHelp()

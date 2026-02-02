@@ -28,6 +28,14 @@ public class AppSettings: IAppSettings
         ?? throw new Exception("Missing config Paths:FanPros");
 
 }
+public static class RepoPath
+{
+    public static string Root
+        => Path.GetFullPath(
+            Path.Combine(AppContext.BaseDirectory,
+                                       "..", "..", "..", "..", ".."));
+}
+
 public class ConfigSettings
 {
     public IAppSettings AppSettings;
@@ -42,8 +50,11 @@ public class ConfigSettings
         get
         {
             var fanProsCsvFile = Path.Combine(
-            AppSettings.FanPros_RelativePath,
-            $"FantasyPros_{AppSettings.SeasonYear}_Draft_ALL_Rankings.csv");
+                RepoPath.Root,
+                "rawData",
+                AppSettings.FanPros_RelativePath,
+                $"FantasyPros_{AppSettings.SeasonYear}_Draft"
+                    +"_ALL_Rankings.csv");
 
             return fanProsCsvFile;
         }
