@@ -11,6 +11,7 @@ public static class ImportCommand
         string? fileType = null;
         int? rows = null;
 
+        //Extract parameter values
         for (int i = 0; i < args.Length; i++)
         {
             if (args[i].Equals("--match-column", 
@@ -41,17 +42,24 @@ public static class ImportCommand
             }
         }
 
-        if (string.IsNullOrWhiteSpace(matchColumn))
+        var service = new ImportService(new AppSettings());
+
+        // Import path (authoritative)
+        await service.ImportPlayersAsync(
+            fileType,
+            rows);
+
+        //Call Check Matches
+        // TODO: Move CheckMatchesAsync() to data-integrity command
+
+        if (matchColumn.HasString())
         {
-            Console.WriteLine("ERROR: Missing required option --match-column");
-            return;
+            await service.CheckMatchesAsync(matchColumn!,
+                                            showPlayer,
+                                            fileType,
+                                            rows
+                                            );
         }
 
-        var service = new ImportService(new AppSettings());
-        await service.CheckMatchesAsync(matchColumn,
-                                        showPlayer,
-                                        fileType,
-                                        rows
-                                        );
     }
 }

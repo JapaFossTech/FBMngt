@@ -5,9 +5,9 @@ using System.Text;
 
 namespace FBMngt.IO.Csv;
 
-public static class FanProsCsvReader
+public class FanProsCsvReader
 {
-    public static List<FanProsPlayer> Read(
+    public virtual List<FanProsPlayer> Read(
                                 string path, int? maxRows = 400)
     {
         //Get the file path for the newest csv file

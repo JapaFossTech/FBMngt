@@ -23,7 +23,7 @@ public class PlayerResolver
 
         // 2️ Build lookup
         var lookup = new Dictionary<string, Player>(
-                                StringComparer.OrdinalIgnoreCase);
+                            StringComparer.OrdinalIgnoreCase);
 
         foreach (var p in dbPlayers)
         {
@@ -44,7 +44,8 @@ public class PlayerResolver
             else
             {
                 player.PlayerID = null; // explicit
-                Console.WriteLine($"Player not found in db: {key}");
+                Console.WriteLine($@"PlayerResolver: 
+                            Player not found in db: {key}");
             }
         }
     }

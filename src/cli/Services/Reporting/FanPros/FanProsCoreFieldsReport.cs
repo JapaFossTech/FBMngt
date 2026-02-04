@@ -6,84 +6,12 @@ using FBMngt.Services.Players;
 namespace FBMngt.Services.Reporting.FanPros;
 
 // FanPros
-//public sealed class FanProsPopulationBuilder
-//{
-//    public (
-//        List<SteamerPitcherProjection> Pitchers,
-//        List<SteamerBatterProjection> Hitters
-//    )
-//    BuildPopulation(
-//        List<FanProsPlayer> fanProsPlayers,
-//        List<SteamerPitcherProjection> steamerPitchers,
-//        List<SteamerBatterProjection> steamerHitters)
-//    {
-//        Dictionary<int, SteamerPitcherProjection> pitcherMap =
-//            steamerPitchers.ToDictionary(p => p.PlayerID.Value);
-
-//        Dictionary<int, SteamerBatterProjection> hitterMap =
-//            steamerHitters.ToDictionary(h => h.PlayerID.Value);
-
-//        List<SteamerPitcherProjection> pitchers = new();
-//        List<SteamerBatterProjection> hitters = new();
-
-//        foreach (FanProsPlayer fp in fanProsPlayers)
-//        {
-//            if (fp.IsPitcher)
-//            {
-//                pitchers.Add(
-//                    pitcherMap.TryGetValue(fp.PlayerID.Value, out var p)
-//                        ? p
-//                        : CreateEmptyPitcher(fp));
-//            }
-//            else
-//            {
-//                hitters.Add(
-//                    hitterMap.TryGetValue(fp.PlayerID.Value, out var h)
-//                        ? h
-//                        : CreateEmptyHitter(fp));
-//            }
-//        }
-
-//        return (pitchers, hitters);
-//    }
-
-//    // ZERO-FILL GUARDRAILS
-
-//    private static SteamerPitcherProjection CreateEmptyPitcher(
-//        FanProsPlayer fp)
-//    {
-//        return new SteamerPitcherProjection
-//        {
-//            PlayerID = fp.PlayerID,
-//            PlayerName = fp.PlayerName,
-//            W = 0,
-//            SV = 0,
-//            K = 0,
-//            ERA = 0,
-//            WHIP = 0
-//        };
-//    }
-
-//    private static SteamerBatterProjection CreateEmptyHitter(
-//        FanProsPlayer fp)
-//    {
-//        return new SteamerBatterProjection
-//        {
-//            PlayerID = fp.PlayerID,
-//            PlayerName = fp.PlayerName,
-//            R = 0,
-//            HR = 0,
-//            RBI = 0,
-//            SB = 0,
-//            AVG = 0
-//        };
-//    }
-//}
 
 public class FanProsCoreFieldsReport
     : ReportBase<FanProsPlayer, FanProsPlayer>
 {
     private readonly ConfigSettings _configSettings;
+    private FanProsCsvReader _fanProsCsvReader { get; init; }
 
     public FanProsCoreFieldsReport(
         IAppSettings appSettings,
@@ -91,12 +19,13 @@ public class FanProsCoreFieldsReport
         : base(new PlayerResolver(playerRepository))
     {
         _configSettings = new ConfigSettings(appSettings);
+        _fanProsCsvReader = new FanProsCsvReader();
     }
 
     protected override Task<List<FanProsPlayer>> ReadAsync(int rows)
     {
         List<FanProsPlayer> items =
-            FanProsCsvReader.Read(
+            _fanProsCsvReader.Read(
                 _configSettings.FanPros_Rankings_InputCsv_Path,
                 rows);
 

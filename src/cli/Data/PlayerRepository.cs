@@ -7,6 +7,7 @@ namespace FBMngt.Data;
 public interface IPlayerRepository
 {
     Task<List<Player>> GetAllAsync();
+    Task InsertAsync(Player player);
 }
 
 public class PlayerRepository : IPlayerRepository
@@ -46,4 +47,45 @@ public class PlayerRepository : IPlayerRepository
 
         return players;
     }
+    public async Task InsertAsync(Player player)
+    {
+        if (player == null)
+            throw new ArgumentNullException(nameof(player));
+
+        using var conn = new SqlConnection(_connectionString);
+        using var cmd = new SqlCommand(
+            @"
+        INSERT INTO tblPlayer
+        (
+            PlayerName,
+            Aka1,
+            Aka2,
+            ModifiedDate
+        )
+        VALUES
+        (
+            @PlayerName,
+            @Aka1,
+            @Aka2,
+            GETUTCDATE()
+        );
+        ",
+            conn);
+
+        cmd.Parameters.AddWithValue(
+            "@PlayerName",
+            player.PlayerName.ToDbValue());
+
+        cmd.Parameters.AddWithValue(
+            "@Aka1",
+            player.Aka1.ToDbValue());
+
+        cmd.Parameters.AddWithValue(
+            "@Aka2",
+            player.Aka2.ToDbValue());
+
+        await conn.OpenAsync();
+        await cmd.ExecuteNonQueryAsync();
+    }
+
 }

@@ -1,6 +1,7 @@
 ﻿using FBMngt.Data;
 using FBMngt.IO.Csv;
 using FBMngt.Models;
+using FBMngt.Services.Players;
 using FBMngt.Services.Roster;
 using FBMngt.Services.Teams;
 
@@ -9,10 +10,37 @@ namespace FBMngt.Services.Importing;
 public class ImportService
 {
     private readonly ConfigSettings _configSettings;
+    private IPlayerRepository _playerRepository { get; init; }
+    private PlayerResolver _playerResolver { get; init; }
+    private PlayerImportService _playerImportService { get; init; }
+    private FanProsCsvReader _fanProsCsvReader { get; init; }
+
+    //Ctor
     public ImportService(IAppSettings appSettings)
     {
         _configSettings = new ConfigSettings(appSettings);
+        _playerRepository = new PlayerRepository();
+        _playerResolver = new PlayerResolver(_playerRepository);
+        _playerImportService = new PlayerImportService(_playerRepository);
+        _fanProsCsvReader = new FanProsCsvReader();
     }
+    public ImportService(
+        ConfigSettings configSettings,
+        IPlayerRepository playerRepository,
+        PlayerResolver playerResolver,
+        PlayerImportService playerImportService,
+        FanProsCsvReader fanProsCsvReader)
+    {
+        _configSettings = configSettings;
+        _playerRepository = playerRepository;
+        _playerResolver = playerResolver;
+        _playerImportService = playerImportService;
+        _fanProsCsvReader = fanProsCsvReader;
+    }
+
+
+    #region CheckMatchesAsync
+    // TODO: ImportPlayersAsync is the only method that should remain here long-term
     public async Task CheckMatchesAsync(
         string matchColumn,
         bool showPlayer,
@@ -49,8 +77,7 @@ public class ImportService
         {
             string fullPath = _configSettings.FanPros_Rankings_InputCsv_Path;
 
-            var fanProsPlayers =
-                FanProsCsvReader.Read(fullPath, rows ?? 200);
+            var fanProsPlayers = _fanProsCsvReader.Read(fullPath, rows ?? 200);
 
             ProcessGroup(
                 title: "FanPros Draft Rankings",
@@ -143,9 +170,9 @@ public class ImportService
                 resolvedDbTeam = teamResolver.Resolve(dbPlayer.organization_id);
             }
 
-    //        Console.WriteLine(
-    //$"{fanPros.PlayerName} | CSV={fanPros.Team} -> {resolvedCsvTeam.TeamId} | " +
-    //$"DB={dbPlayer.organization_id} -> {resolvedDbTeam.TeamId}");
+            //        Console.WriteLine(
+            //$"{fanPros.PlayerName} | CSV={fanPros.Team} -> {resolvedCsvTeam.TeamId} | " +
+            //$"DB={dbPlayer.organization_id} -> {resolvedDbTeam.TeamId}");
 
             if (!resolvedDbTeam.IsResolved)
                 continue;
@@ -156,15 +183,15 @@ public class ImportService
                 mismatches.Add(new RosterMismatch
                 {
                     PlayerName = fanPros.PlayerName!,
-                    CsvTeamAbbrev = 
+                    CsvTeamAbbrev =
                         teamById[resolvedCsvTeam.TeamId!.Value],
                     CsvTeamId = resolvedCsvTeam.TeamId.Value,
-                    DbTeamAbbrev = 
+                    DbTeamAbbrev =
                         teamById[resolvedDbTeam.TeamId!.Value],
                     DbTeamId = resolvedDbTeam.TeamId.Value
                 });
             }
-            
+
         }
 
         Console.WriteLine($"=== {title} ===");
@@ -191,4 +218,48 @@ public class ImportService
             }
         }
     }
+
+    #endregion
+
+    #region ImportPlayersAsync
+    public async Task ImportPlayersAsync(string? fileType, int? rows)
+    {
+        // Guard for FanPros only
+        if (fileType == null ||
+            !fileType.Equals("FanPros", AppConst.IGNORE_CASE))
+        {
+            Console.WriteLine("ImportPlayers currently supports FanPros only.");
+            return;
+        }
+
+        // 1️ Load FanPros CSV players
+        string fullPath = _configSettings.FanPros_Rankings_InputCsv_Path;
+
+        List<FanProsPlayer> players =
+                            _fanProsCsvReader.Read(fullPath, rows ?? 400);
+
+        if (players.Count == 0)
+            return;
+
+        // 2️ Resolve PlayerIDs
+        await _playerResolver.ResolvePlayerIDAsync(
+                            players.Cast<IPlayer>().ToList());
+
+        // 3️ Extract missing players
+        List<string> missingPlayers = players
+            .Where(p => p.PlayerID == null
+                     && p.PlayerName.HasString())
+            .Select(p => p.PlayerName!.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        // 4 Import missing players
+
+        await _playerImportService.InsertPlayersAsync(missingPlayers);
+
+        // 5 Re-run resolution after import
+        await _playerResolver.ResolvePlayerIDAsync(
+                            players.Cast<IPlayer>().ToList());
+    }
+    #endregion
 }
