@@ -44,8 +44,8 @@ public class PlayerResolver
             else
             {
                 player.PlayerID = null; // explicit
-                Console.WriteLine($@"PlayerResolver: 
-                            Player not found in db: {key}");
+                Console.WriteLine("PlayerResolver: "
+                        +$"Player not found in db: {key}");
             }
         }
     }

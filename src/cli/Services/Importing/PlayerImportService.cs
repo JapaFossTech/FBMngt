@@ -28,7 +28,7 @@ public class PlayerImportService
             await _playerRepository.InsertAsync(player);
 
             Console.WriteLine(
-               $"Inserted new player into tblPlayer: {name}");
+               $"PlayerImportService: Inserted new player into tblPlayer: {name}");
         }
     }
 }

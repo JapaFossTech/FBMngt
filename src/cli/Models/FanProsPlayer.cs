@@ -9,4 +9,10 @@ public class FanProsPlayer : IPlayer
     //Non IPlayer
     public string? Position { get; set; }
     public int Rank { get; set; }
+
+    public override string ToString()
+    {
+        string id = PlayerID.HasValue ? PlayerID.Value.ToString() : "ID?";
+        return $"{id}: {PlayerName ?? "Name?"}";
+    }
 }

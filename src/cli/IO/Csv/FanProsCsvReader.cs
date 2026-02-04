@@ -16,8 +16,8 @@ public class FanProsCsvReader
         path = importFileResolver.ResolveNewestFilePath(path,
                                     ImportNormalizationMode.ResolveOnly);
 
-        Console.WriteLine($@"Using FanPros file: 
-                                        {Path.GetFileName(path)}");
+        Console.WriteLine($"Using FanPros file: "
+                            +$"{Path.GetFileName(path)}");
 
         //Continue
         var result = new List<FanProsPlayer>();
