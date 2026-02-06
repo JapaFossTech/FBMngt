@@ -12,7 +12,8 @@ public class FanProsPlayer : IPlayer
 
     public override string ToString()
     {
-        string id = PlayerID.HasValue ? PlayerID.Value.ToString() : "ID?";
+        string id = PlayerID.HasValue 
+            ? PlayerID.Value.ToString() : "ID?";
         return $"{id}: {PlayerName ?? "Name?"}";
     }
 }

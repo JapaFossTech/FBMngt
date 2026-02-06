@@ -11,7 +11,27 @@ public static class ReportCommand
         var service = new ReportService(new AppSettings(),
                                         new PlayerRepository());
 
-        // Z-Score report (existing functionality)
+        // Combined report
+        if (args.Length > 0 &&
+            args[0].Equals("--combine", AppConst.IGNORE_CASE))
+        {
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage:");
+                Console.WriteLine("  FBMngt report --combine FanProsCoreFields,zscores");
+                return;
+            }
+
+            string combinedValue = args[1];
+
+            IEnumerable<string> reportNames =
+                combinedValue.Split(',', StringSplitOptions.RemoveEmptyEntries);
+
+            await service.GenerateCombinedReportAsync(reportNames);
+            return;
+        }
+
+        // Z-Score report
         if (args.Length > 0 &&
             args[0].Equals("--zscores", AppConst.IGNORE_CASE))
         {
@@ -19,7 +39,7 @@ public static class ReportCommand
             return;
         }
 
-        // FanPros Core Fields report (new functionality)
+        // FanPros Core Fields report
         bool isFanProsCoreFields = args.Contains("--FanProsCoreFields");
         int rows = 250;
 
@@ -34,7 +54,6 @@ public static class ReportCommand
 
         if (isFanProsCoreFields)
         {
-            
             await service.GenerateFanProsCoreFieldsReportAsync(rows);
             return;
         }
@@ -43,5 +62,6 @@ public static class ReportCommand
         Console.WriteLine("Usage:");
         Console.WriteLine("  FBMngt report --zscores");
         Console.WriteLine("  FBMngt report --FanProsCoreFields [--rows 250]");
+        Console.WriteLine("  FBMngt report --combine FanProsCoreFields,zscores");
     }
 }

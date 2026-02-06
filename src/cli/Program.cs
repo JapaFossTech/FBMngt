@@ -77,5 +77,6 @@ class Program
         Console.WriteLine("  report --zscores");
         Console.WriteLine("  data-integrity players [--dry-run]");
         Console.WriteLine("  report --FanProsCoreFields [--rows 250]");
+        Console.WriteLine("  report --combine FanProsCoreFields,zscores");
     }
 }

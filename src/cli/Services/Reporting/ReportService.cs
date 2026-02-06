@@ -1,5 +1,6 @@
 ﻿using FBMngt.Data;
 using FBMngt.Models;
+using FBMngt.Services.Reporting.Display;
 using FBMngt.Services.Reporting.FanPros;
 using FBMngt.Services.Reporting.ZScore;
 
@@ -70,4 +71,115 @@ public class ReportService
                                                 );
         await report.GenerateAndWriteAsync(rows);
     }
+
+    //public async Task GenerateCombinedReportAsync_del(
+    //                                IEnumerable<string> reportNames)
+    //{
+    //    // Registry (explicit for now; DI can come later)
+    //    IReportBuilder reportRegistry = new ReportRegistry();
+
+    //    // Collect individual report outputs
+    //    var reportResults = new List<ReportResult<object>>();
+
+    //    foreach (string reportName in reportNames)
+    //    {
+    //        if (!reportRegistry.IsSupported(reportName))
+    //        {
+    //            throw new InvalidOperationException(
+    //                $"Unknown report name: {reportName}");
+    //        }
+
+    //        ReportResult<object> result =
+    //            await reportRegistry.GenerateAsync(
+    //                    reportName,
+    //                    _configSettings,
+    //                    _playerRepository);
+
+    //        reportResults.Add(result);
+    //    }
+
+    //    // Horizontally append reports
+    //    IHorizontalReportAppender horizontalAppender =
+    //        new HorizontalReportAppender();
+
+    //    List<string> combinedLines =
+    //        horizontalAppender.Append(reportResults);
+
+    //    // Write final combined output
+    //    string path = Path.Combine(
+    //        _configSettings.AppSettings.ReportPath,
+    //        $"{AppConst.APP_NAME}_Combined_Report_" +
+    //        $"{_configSettings.AppSettings.SeasonYear}.tsv");
+
+    //    await File.WriteAllLinesAsync(
+    //        path,
+    //        combinedLines);
+    //}
+    public async Task GenerateCombinedReportAsync(
+                                    IEnumerable<string> reportNames)
+    {
+        List<IReportBuilder> reportBuilders = 
+                            GetReportBuilders(reportNames);
+
+        // Collect individual report outputs
+        var reportResults = new List<ReportResult<object>>();
+
+        foreach (IReportBuilder reportBuilder in reportBuilders)
+        {
+            ReportResult<object> result = await reportBuilder
+                .GenerateAsync();
+
+            reportResults.Add(result);
+        }
+
+        // Horizontally append reports
+        IHorizontalReportAppender horizontalAppender =
+            new HorizontalReportAppender();
+
+        List<string> combinedLines =
+            horizontalAppender.Append(reportResults);
+
+        // Write final combined output
+        string path = Path.Combine(
+            _configSettings.AppSettings.ReportPath,
+            $"{AppConst.APP_NAME}_Combined_Report_" +
+            $"{_configSettings.AppSettings.SeasonYear}.tsv");
+
+        await File.WriteAllLinesAsync(
+            path,
+            combinedLines);
+    }
+
+    private List<IReportBuilder> GetReportBuilders(
+                            IEnumerable<string> reportNames)
+    {
+        var builders = new List<IReportBuilder>();
+
+        foreach (string reportName in reportNames)
+        {
+            switch (reportName.ToLowerInvariant())
+            {
+                case "fanproscorefields":
+                    builders.Add(
+                        new FanProsCoreFieldsReportBuilder(
+                            _configSettings,
+                            _playerRepository));
+                    break;
+
+                case "zscores":
+                    builders.Add(
+                        new ZscoresReportBuilder(
+                            _configSettings,
+                            _playerRepository));
+                    break;
+
+                default:
+                    throw new InvalidOperationException(
+                        $"Unknown report name: {reportName}");
+            }
+        }
+
+        return builders;
+    }
+
 }
