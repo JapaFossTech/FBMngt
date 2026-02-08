@@ -7,9 +7,13 @@ public interface IAppSettings
     string ProjectionPath { get; }
     string ReportPath { get; }
     int SeasonYear { get; }
+    string Yahoo_ClientId { get; }
+    string Yahoo_ClientSecret { get; }
+    string Yahoo_RedirectUri { get; }
+    string Yahoo_RefreshToken { get; }
 }
 
-public class AppSettings: IAppSettings
+public class AppSettings : IAppSettings
 {
     public int SeasonYear => DateTime.Now.Year;
     public string ProjectionPath =>
@@ -26,6 +30,19 @@ public class AppSettings: IAppSettings
     public string FanPros_RelativePath =>
         Program.Configuration["Paths:FanPros"]
         ?? throw new Exception("Missing config Paths:FanPros");
+
+    public string Yahoo_ClientId =>
+        Program.Configuration["YahooOAuth:ClientId"]
+        ?? throw new Exception("Missing config YahooOAuth:ClientId");
+    public string Yahoo_ClientSecret =>
+        Program.Configuration["YahooOAuth:ClientSecret"]
+        ?? throw new Exception("Missing config YahooOAuth:ClientSecret");
+    public string Yahoo_RefreshToken =>
+        Program.Configuration["YahooOAuth:RefreshToken"]
+        ?? throw new Exception("Missing config YahooOAuth:RefreshToken");
+    public string Yahoo_RedirectUri =>
+        Program.Configuration["YahooOAuth:RedirectUri"]
+        ?? throw new Exception("Missing config YahooOAuth:RedirectUri");
 
 }
 public static class RepoPath
@@ -44,7 +61,6 @@ public class ConfigSettings
     {
         AppSettings = appSettings;
     }
-    //public string ReportPath => AppSettings.ReportPath;
     public string FanPros_Rankings_InputCsv_Path
     {
         get

@@ -16,6 +16,14 @@ public class FakeAppSettings : IAppSettings
 
     public int SeasonYear => DateTime.Now.Year;
 
+    public string Yahoo_ClientId => throw new NotImplementedException();
+
+    public string Yahoo_ClientSecret => throw new NotImplementedException();
+
+    public string Yahoo_RedirectUri => throw new NotImplementedException();
+
+    public string Yahoo_RefreshToken => throw new NotImplementedException();
+
     public FakeAppSettings()
     {
         _configSettings = new ConfigSettings(this);
