@@ -11,18 +11,24 @@ public class FanProsCoreFieldsReport
     : ReportBase<FanProsPlayer, FanProsPlayer>
 {
     private readonly ConfigSettings _configSettings;
+    private IAppSettings AppSettings 
+                        => _configSettings.AppSettings;
+    private readonly PreDraftAdjustRepository _preDraftAdjustRepo;
     private FanProsCsvReader _fanProsCsvReader { get; init; }
 
     public FanProsCoreFieldsReport(
-        IAppSettings appSettings,
+        ConfigSettings configSettings,
         IPlayerRepository playerRepository)
         : base(new PlayerResolver(playerRepository))
     {
-        _configSettings = new ConfigSettings(appSettings);
+        _configSettings = configSettings;
         _fanProsCsvReader = new FanProsCsvReader();
+        _preDraftAdjustRepo = new PreDraftAdjustRepository(
+            AppSettings);
     }
 
-    protected override Task<List<FanProsPlayer>> ReadAsync(int rows)
+    protected override Task<List<FanProsPlayer>> ReadAsync(
+                                                    int rows)
     {
         List<FanProsPlayer> items =
             _fanProsCsvReader.Read(
@@ -32,18 +38,47 @@ public class FanProsCoreFieldsReport
         return Task.FromResult(items);
     }
 
+    protected override async Task<List<FanProsPlayer>> TransformAsync(List<FanProsPlayer> input)
+    {
+        var offsets = await _preDraftAdjustRepo.GetAllAsync();
+
+        foreach (FanProsPlayer p in input)
+        {
+            if (offsets.TryGetValue(p.PlayerID!.Value, out int off))
+                p.Offset = off;
+            else
+                p.Offset = 0;
+        }
+
+        // 1️ Sort by Rank - Offset, tie-break by Rank
+        List<FanProsPlayer> sorted = input
+            .OrderBy(p => p.Rank - p.Offset)
+            .ThenBy(p => p.Rank)
+            .ToList();
+
+        // 2️ Assign unique AdjustedRank sequentially
+        for (int i = 0; i < sorted.Count; i++)
+        {
+            sorted[i].AdjustedRank = i + 1; // 1-based
+        }
+
+        return sorted;
+    }
+
     // Convert rows → TSV lines
     protected override List<string> FormatReport(
         List<FanProsPlayer> rows)
     {
         List<string> lines = new();
 
-        lines.Add("PlayerID\tPLAYER NAME\tTEAM\tPOS");
+        lines.Add(
+            "PlayerID\tPLAYER NAME\tTEAM\tPOS\tRANK\tOFFSET\tADJUSTED");
 
-        foreach (FanProsPlayer p in rows.OrderBy(p => p.Rank))
+        foreach (FanProsPlayer p in rows)
         {
             lines.Add(
-                $"{p.PlayerID}\t{p.PlayerName}\t{p.Team}\t{p.Position}");
+                $"{p.PlayerID}\t{p.PlayerName}\t{p.Team}\t{p.Position}" +
+                $"\t{p.Rank}\t{p.Offset}\t{p.AdjustedRank}");
         }
 
         return lines;

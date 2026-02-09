@@ -1,7 +1,10 @@
-﻿namespace FBMngt;
+﻿using Microsoft.Extensions.Configuration;
+
+namespace FBMngt;
 
 public interface IAppSettings
 {
+    string MLB_ConnString { get; }
     string FanPros_RelativePath { get; }
     string ImportedFilesPath { get; }
     string ProjectionPath { get; }
@@ -44,6 +47,9 @@ public class AppSettings : IAppSettings
         Program.Configuration["YahooOAuth:RedirectUri"]
         ?? throw new Exception("Missing config YahooOAuth:RedirectUri");
 
+    public string MLB_ConnString => 
+        Program.Configuration.GetConnectionString("MLB")
+            ?? throw new Exception("Missing connection string 'MLB'");
 }
 public static class RepoPath
 {

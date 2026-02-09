@@ -10,6 +10,8 @@ public class FanProsCsvReader
     public virtual List<FanProsPlayer> Read(
                                 string path, int? maxRows = 400)
     {
+        Console.WriteLine("FanProsCsvReader.Read: maxRows: " +
+            $"{maxRows}, when " + "zero, will read everything.");
         //Get the file path for the newest csv file
         //TODO: Consider decoupling here because Filename normalization is not part of csv read
         var importFileResolver = new ImportFileResolver();

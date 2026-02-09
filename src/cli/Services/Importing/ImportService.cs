@@ -10,6 +10,8 @@ namespace FBMngt.Services.Importing;
 public class ImportService
 {
     private readonly ConfigSettings _configSettings;
+    private IAppSettings AppSettings 
+                                => _configSettings.AppSettings;
     private IPlayerRepository _playerRepository { get; init; }
     private PlayerResolver _playerResolver { get; init; }
     private PlayerImportService _playerImportService { get; init; }
@@ -19,7 +21,7 @@ public class ImportService
     public ImportService(IAppSettings appSettings)
     {
         _configSettings = new ConfigSettings(appSettings);
-        _playerRepository = new PlayerRepository();
+        _playerRepository = new PlayerRepository(appSettings);
         _playerResolver = new PlayerResolver(_playerRepository);
         _playerImportService = new PlayerImportService(_playerRepository);
         _fanProsCsvReader = new FanProsCsvReader();
@@ -48,7 +50,7 @@ public class ImportService
         int? rows)
     {
         // 1. Load DB data
-        var playerRepo = new PlayerRepository();
+        var playerRepo = new PlayerRepository(AppSettings);
         var players = await playerRepo.GetAllAsync();
 
         var teamRepo = new TeamRepository();

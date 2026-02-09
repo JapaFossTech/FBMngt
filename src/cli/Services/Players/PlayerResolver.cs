@@ -33,6 +33,7 @@ public class PlayerResolver
         }
 
         // 3️ Resolve PlayerID for each input player
+        int lineCount = 1;
         foreach (IPlayer player in inputPlayers)
         {
             var key = player.PlayerName!.Trim();
@@ -44,9 +45,10 @@ public class PlayerResolver
             else
             {
                 player.PlayerID = null; // explicit
-                Console.WriteLine("PlayerResolver: "
+                Console.WriteLine($"PlayerResolver: line {lineCount},"
                         +$"Player not found in db: {key}");
             }
+            lineCount++;
         }
     }
     private static void AddLookup(

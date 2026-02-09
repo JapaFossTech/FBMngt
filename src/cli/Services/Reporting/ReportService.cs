@@ -22,7 +22,7 @@ public class ReportService
         // Generate FanPros report FIRST (source of truth)
         FanProsCoreFieldsReport fanProsReport =
             new FanProsCoreFieldsReport(
-                _configSettings.AppSettings,
+                _configSettings,
                 _playerRepository);
 
         ReportResult<FanProsPlayer> fanProsResult =
@@ -63,58 +63,15 @@ public class ReportService
     }
 
     // FanProsCoreFields
-    public async Task GenerateFanProsCoreFieldsReportAsync(int rows)
+    public async Task GenerateFanProsCoreFieldsReportAsync(
+                                                int rows)
     {
         var report = new FanProsCoreFieldsReport(
-                                                _configSettings.AppSettings,
+                                                _configSettings,
                                                 _playerRepository
                                                 );
         await report.GenerateAndWriteAsync(rows);
     }
-
-    //public async Task GenerateCombinedReportAsync_del(
-    //                                IEnumerable<string> reportNames)
-    //{
-    //    // Registry (explicit for now; DI can come later)
-    //    IReportBuilder reportRegistry = new ReportRegistry();
-
-    //    // Collect individual report outputs
-    //    var reportResults = new List<ReportResult<object>>();
-
-    //    foreach (string reportName in reportNames)
-    //    {
-    //        if (!reportRegistry.IsSupported(reportName))
-    //        {
-    //            throw new InvalidOperationException(
-    //                $"Unknown report name: {reportName}");
-    //        }
-
-    //        ReportResult<object> result =
-    //            await reportRegistry.GenerateAsync(
-    //                    reportName,
-    //                    _configSettings,
-    //                    _playerRepository);
-
-    //        reportResults.Add(result);
-    //    }
-
-    //    // Horizontally append reports
-    //    IHorizontalReportAppender horizontalAppender =
-    //        new HorizontalReportAppender();
-
-    //    List<string> combinedLines =
-    //        horizontalAppender.Append(reportResults);
-
-    //    // Write final combined output
-    //    string path = Path.Combine(
-    //        _configSettings.AppSettings.ReportPath,
-    //        $"{AppConst.APP_NAME}_Combined_Report_" +
-    //        $"{_configSettings.AppSettings.SeasonYear}.tsv");
-
-    //    await File.WriteAllLinesAsync(
-    //        path,
-    //        combinedLines);
-    //}
     public async Task GenerateCombinedReportAsync(
                                     IEnumerable<string> reportNames)
     {
@@ -149,7 +106,6 @@ public class ReportService
             path,
             combinedLines);
     }
-
     private List<IReportBuilder> GetReportBuilders(
                             IEnumerable<string> reportNames)
     {

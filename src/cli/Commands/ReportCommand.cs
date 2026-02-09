@@ -8,8 +8,9 @@ public static class ReportCommand
 {
     public static async Task ExecuteAsync(string[] args)
     {
-        var service = new ReportService(new AppSettings(),
-                                        new PlayerRepository());
+        var appSettings = new AppSettings();
+        var service = new ReportService(appSettings,
+                             new PlayerRepository(appSettings));
 
         // Combined report
         if (args.Length > 0 &&

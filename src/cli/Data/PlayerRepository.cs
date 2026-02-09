@@ -14,11 +14,9 @@ public class PlayerRepository : IPlayerRepository
 {
     private readonly string _connectionString;
 
-    public PlayerRepository()
+    public PlayerRepository(IAppSettings appSettings)
     {
-        _connectionString =
-            Program.Configuration.GetConnectionString("MLB")
-            ?? throw new Exception("Missing connection string 'MLB'");
+        _connectionString = appSettings.MLB_ConnString;
     }
 
     public async Task<List<Player>> GetAllAsync()

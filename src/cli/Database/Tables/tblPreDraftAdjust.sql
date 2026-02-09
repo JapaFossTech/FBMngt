@@ -1,0 +1,37 @@
+USE [MLB]
+GO
+
+/****** Object:  Table [dbo].[tblPreDraftAdjust]    Script Date: 2/6/2026 8:00:59 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[tblPreDraftAdjust](
+	[PreDraftAdjustID] [int] IDENTITY(1,1) NOT NULL,
+	[PlayerID] [int] NOT NULL,
+	[Offset] [int] NOT NULL,
+ CONSTRAINT [PK_tblPreDraftAdjust] PRIMARY KEY CLUSTERED 
+(
+	[PreDraftAdjustID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+ALTER TABLE [dbo].[tblPreDraftAdjust]  WITH CHECK ADD  CONSTRAINT [FK_tblPreDraftAdjust_tblPlayer] FOREIGN KEY([PlayerID])
+REFERENCES [dbo].[tblPlayer] ([PlayerID])
+ON DELETE CASCADE
+GO
+
+ALTER TABLE [dbo].[tblPreDraftAdjust] CHECK CONSTRAINT [FK_tblPreDraftAdjust_tblPlayer]
+GO
+
+/****** Object:  Index [IX_tblPreDraftAdjust_PlayerID_U]    Script Date: 2/6/2026 8:01:49 PM ******/
+CREATE UNIQUE NONCLUSTERED INDEX [IX_tblPreDraftAdjust_PlayerID_U] ON [dbo].[tblPreDraftAdjust]
+(
+	[PlayerID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+
+

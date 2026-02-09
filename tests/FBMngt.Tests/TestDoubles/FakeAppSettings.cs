@@ -24,6 +24,8 @@ public class FakeAppSettings : IAppSettings
 
     public string Yahoo_RefreshToken => throw new NotImplementedException();
 
+    public string MLB_ConnString => throw new NotImplementedException();
+
     public FakeAppSettings()
     {
         _configSettings = new ConfigSettings(this);

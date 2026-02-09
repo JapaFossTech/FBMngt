@@ -9,6 +9,8 @@ public class FanProsPlayer : IPlayer
     //Non IPlayer
     public string? Position { get; set; }
     public int Rank { get; set; }
+    public int Offset { get; set; }
+    public int AdjustedRank { get; set; } = 0;
 
     public override string ToString()
     {

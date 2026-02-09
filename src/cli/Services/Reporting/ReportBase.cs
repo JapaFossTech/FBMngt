@@ -9,24 +9,32 @@ public abstract class ReportBase<TInput, TReportRow>
 {
     private readonly PlayerResolver _playerResolver;
 
+    //Ctor
     protected ReportBase(PlayerResolver playerResolver)
     {
         _playerResolver = playerResolver;
     }
-
-    public async Task<ReportResult<TReportRow>> GenerateAndWriteAsync(
-        int rows = 0)
+    public async Task<List<TReportRow>> GenerateAsync(
+                                                int rows = 0)
     {
+        Console.WriteLine($"ReportBase: Rows to read:: {rows}");
         // 1️ Read
         List<TInput> input = await ReadAsync(rows);
 
-        // 2️ Resolve PlayerIDs (ONCE)
+        // 2️ Resolve PlayerIDs
         await _playerResolver.ResolvePlayerIDAsync(
             input.Cast<IPlayer>().ToList());
 
-        // 3️ Transform / calculate
-        List<TReportRow> reportRows =
-            await TransformAsync(input);
+        // 3️ Transform
+        return await TransformAsync(input);
+    }
+
+    public async Task<ReportResult<TReportRow>> 
+        GenerateAndWriteAsync(int rows = 0)
+    {
+        // 1,2 and 3: Get Data with PalyerID resolved
+        // and data transformed
+        List<TReportRow> reportRows = await GenerateAsync(rows);
 
         // 4️ Format
         List<string> lines =
