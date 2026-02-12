@@ -24,7 +24,8 @@ public class FakeAppSettings : IAppSettings
 
     public string Yahoo_RefreshToken => throw new NotImplementedException();
 
-    public string MLB_ConnString => throw new NotImplementedException();
+    //public string MLB_ConnString => "Server=localhost\\SQLEXPRESS;Database=MLB;Trusted_Connection=True;Connection Timeout=180;TrustServerCertificate=True;";
+    public string MLB_ConnString => "FakeConnectionString";
 
     public FakeAppSettings()
     {

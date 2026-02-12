@@ -12,7 +12,9 @@ public class GenerateFanProsCoreFieldsReportAsyncTests
 {
     private FakeAppSettings _fakeAppSettings = new();
     private List<Player> _dbPlayers = default!;
-    private Mock<IPlayerRepository> _repositoryMock = default!;
+    private Mock<IPlayerRepository> _playerRepositoryMock = default!;
+    private Mock<IPreDraftAdjustRepository> 
+                            _preDraftAdjustRepoMock = default!;
     private ReportService _reportService = default!;
 
     [SetUp]
@@ -28,16 +30,23 @@ public class GenerateFanProsCoreFieldsReportAsyncTests
             }
         };
 
-        _repositoryMock = new Mock<IPlayerRepository>();
+        _playerRepositoryMock = new Mock<IPlayerRepository>();
 
-        _repositoryMock
-            .Setup(r => r.GetAllAsync())
-            .ReturnsAsync(_dbPlayers);
+        _playerRepositoryMock
+                        .Setup(r => r.GetAllAsync())
+                        .ReturnsAsync(_dbPlayers);
+
+        _preDraftAdjustRepoMock = 
+                        new Mock<IPreDraftAdjustRepository>();
+        _preDraftAdjustRepoMock
+                    .Setup(x => x.GetAllAsync())
+                    .ReturnsAsync(new Dictionary<int, int>());
 
         _reportService =
             new ReportService(
                 _fakeAppSettings,
-                _repositoryMock.Object);
+                _playerRepositoryMock.Object,
+                _preDraftAdjustRepoMock.Object);
     }
 
     [Test]
@@ -58,7 +67,7 @@ public class GenerateFanProsCoreFieldsReportAsyncTests
         Assert.That(lines.Length, Is.GreaterThan(0));
         Assert.That(
             lines[0],
-            Is.EqualTo("PlayerID\tPLAYER NAME\tTEAM\tPOS"));
+            Is.EqualTo("PlayerID\tPLAYER NAME\tTEAM\tPOS\tRANK\tOFFSET\tADJUSTED"));
     }
 
     [Test]

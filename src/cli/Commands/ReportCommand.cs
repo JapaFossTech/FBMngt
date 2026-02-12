@@ -10,7 +10,8 @@ public static class ReportCommand
     {
         var appSettings = new AppSettings();
         var service = new ReportService(appSettings,
-                             new PlayerRepository(appSettings));
+                        new PlayerRepository(appSettings),
+                        new PreDraftAdjustRepository(appSettings));
 
         // Combined report
         if (args.Length > 0 &&

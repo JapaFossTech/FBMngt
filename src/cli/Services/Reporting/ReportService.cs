@@ -1,5 +1,7 @@
 ﻿using FBMngt.Data;
+using FBMngt.IO.Csv;
 using FBMngt.Models;
+using FBMngt.Services.Players;
 using FBMngt.Services.Reporting.Display;
 using FBMngt.Services.Reporting.FanPros;
 using FBMngt.Services.Reporting.ZScore;
@@ -9,12 +11,17 @@ public class ReportService
 {
     private readonly ConfigSettings _configSettings;
     private readonly IPlayerRepository _playerRepository;
+    private readonly IPreDraftAdjustRepository _preDraftAdjustRepo;
 
-    public ReportService(IAppSettings appSettings,
-                        IPlayerRepository playerRepository)
+    // Ctor
+    public ReportService(
+                    IAppSettings appSettings,
+                    IPlayerRepository playerRepository,
+                    IPreDraftAdjustRepository preDraftAdjustRepo)
     {
         _configSettings = new ConfigSettings(appSettings);
         _playerRepository = playerRepository;
+        _preDraftAdjustRepo = preDraftAdjustRepo;
     }
     // ZScoreReports
     public async Task GenerateZScoreReportsAsync()
@@ -23,7 +30,8 @@ public class ReportService
         FanProsCoreFieldsReport fanProsReport =
             new FanProsCoreFieldsReport(
                 _configSettings,
-                _playerRepository);
+                _playerRepository,
+                _preDraftAdjustRepo);
 
         ReportResult<FanProsPlayer> fanProsResult =
             await fanProsReport.GenerateAndWriteAsync();
@@ -68,7 +76,8 @@ public class ReportService
     {
         var report = new FanProsCoreFieldsReport(
                                                 _configSettings,
-                                                _playerRepository
+                                                _playerRepository,
+                                                _preDraftAdjustRepo
                                                 );
         await report.GenerateAndWriteAsync(rows);
     }
@@ -119,14 +128,16 @@ public class ReportService
                     builders.Add(
                         new FanProsCoreFieldsReportBuilder(
                             _configSettings,
-                            _playerRepository));
+                            _playerRepository,
+                            _preDraftAdjustRepo));
                     break;
 
                 case "zscores":
                     builders.Add(
                         new ZscoresReportBuilder(
                             _configSettings,
-                            _playerRepository));
+                            _playerRepository,
+                            _preDraftAdjustRepo));
                     break;
 
                 default:

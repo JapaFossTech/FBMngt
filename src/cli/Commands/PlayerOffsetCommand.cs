@@ -10,7 +10,10 @@ public static class PlayerOffsetCommand
     public static async Task ExecuteAsync(string[] args)
     {
         var configSettings = new ConfigSettings(new AppSettings());
-        var service = new PlayerOffsetService(configSettings);
+        var service = new PlayerOffsetService(
+            configSettings,
+            new PlayerRepository(configSettings.AppSettings),
+            new PreDraftAdjustRepository(configSettings.AppSettings));
         var appSettings = configSettings.AppSettings;
 
         bool isServiceExecuted = false;
@@ -43,8 +46,10 @@ public static class PlayerOffsetCommand
         if (isServiceExecuted && doCreateReport)
         {
             var reportService =
-                new ReportService(appSettings,
-                                  new PlayerRepository(appSettings));
+                new ReportService(
+                        appSettings,
+                        new PlayerRepository(appSettings),
+                        new PreDraftAdjustRepository(appSettings));
 
             await reportService.GenerateCombinedReportAsync(
                 new[] { "FanProsCoreFields", "zscores" });

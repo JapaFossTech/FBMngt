@@ -2,7 +2,15 @@
 
 namespace FBMngt.Data;
 
-public class PreDraftAdjustRepository
+public interface IPreDraftAdjustRepository
+{
+    Task DeleteAllAsync();
+    Task<Dictionary<int, int>> GetAllAsync();
+    Task InsertAsync(int playerId, int offset);
+    Task UpsertAsync(int playerId, int offset);
+}
+
+public class PreDraftAdjustRepository : IPreDraftAdjustRepository
 {
     private readonly string _connectionString;
 

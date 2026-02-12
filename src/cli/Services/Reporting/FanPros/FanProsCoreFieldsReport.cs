@@ -13,19 +13,21 @@ public class FanProsCoreFieldsReport
     private readonly ConfigSettings _configSettings;
     private IAppSettings AppSettings 
                         => _configSettings.AppSettings;
-    private readonly PreDraftAdjustRepository _preDraftAdjustRepo;
+    private readonly IPreDraftAdjustRepository _preDraftAdjustRepo;
     private FanProsCsvReader _fanProsCsvReader { get; init; }
 
+    // Ctor
     public FanProsCoreFieldsReport(
-        ConfigSettings configSettings,
-        IPlayerRepository playerRepository)
-        : base(new PlayerResolver(playerRepository))
+                    ConfigSettings configSettings,
+                    IPlayerRepository playerRepository,
+                    IPreDraftAdjustRepository preDraftAdjustRepo)
+                    : base(new PlayerResolver(playerRepository))
     {
         _configSettings = configSettings;
         _fanProsCsvReader = new FanProsCsvReader();
-        _preDraftAdjustRepo = new PreDraftAdjustRepository(
-            AppSettings);
+        _preDraftAdjustRepo = preDraftAdjustRepo;
     }
+
 
     protected override Task<List<FanProsPlayer>> ReadAsync(
                                                     int rows)
@@ -42,9 +44,17 @@ public class FanProsCoreFieldsReport
     {
         var offsets = await _preDraftAdjustRepo.GetAllAsync();
 
+        //foreach (FanProsPlayer p in input)
+        //{
+        //    if (offsets.TryGetValue(p.PlayerID!.Value, out int off))
+        //        p.Offset = off;
+        //    else
+        //        p.Offset = 0;
+        //}
         foreach (FanProsPlayer p in input)
         {
-            if (offsets.TryGetValue(p.PlayerID!.Value, out int off))
+            if (p.PlayerID.HasValue &&
+                offsets.TryGetValue(p.PlayerID.Value, out int off))
                 p.Offset = off;
             else
                 p.Offset = 0;

@@ -12,7 +12,8 @@ public class ResolvePlayerIDAsyncTests
 {
     private FakeAppSettings _fakeAppSettings = new();
     private List<Player> _dbPlayers;
-    private Mock<IPlayerRepository> _repositoryMock;
+    private Mock<IPlayerRepository> _playerRepoMock;
+    private Mock<IPreDraftAdjustRepository> _preDraftAdjustRepoMock;
     private ReportService _reportService;
     private PlayerResolver _playerResolver;
 
@@ -31,17 +32,24 @@ public class ResolvePlayerIDAsyncTests
             }
         };
 
-        _repositoryMock = new Mock<IPlayerRepository>();
+        _playerRepoMock = new Mock<IPlayerRepository>();
 
-        _repositoryMock
+        _playerRepoMock
             .Setup(r => r.GetAllAsync())
             .ReturnsAsync(_dbPlayers);
 
+        _preDraftAdjustRepoMock =
+                        new Mock<IPreDraftAdjustRepository>();
+        _preDraftAdjustRepoMock
+                    .Setup(x => x.GetAllAsync())
+                    .ReturnsAsync(new Dictionary<int, int>());
+
         _reportService = new ReportService(_fakeAppSettings,
-                                        _repositoryMock.Object);
+                                    _playerRepoMock.Object,
+                                    _preDraftAdjustRepoMock.Object);
 
         _playerResolver = new PlayerResolver(
-                                        _repositoryMock.Object);
+                                        _playerRepoMock.Object);
     }
 
     [Test]

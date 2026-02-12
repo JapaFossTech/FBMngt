@@ -15,13 +15,16 @@ public sealed class FanProsCoreFieldsReportBuilder
 {
     private readonly ConfigSettings _configSettings;
     private readonly IPlayerRepository _playerRepository;
+    private readonly IPreDraftAdjustRepository _preDraftAdjustRepo;
 
     public FanProsCoreFieldsReportBuilder(
         ConfigSettings configSettings,
-        IPlayerRepository playerRepository)
+        IPlayerRepository playerRepository,
+        IPreDraftAdjustRepository preDraftAdjustRepo)
     {
         _configSettings = configSettings;
         _playerRepository = playerRepository;
+        _preDraftAdjustRepo = preDraftAdjustRepo;
     }
 
     public async Task<ReportResult<object>> GenerateAsync()
@@ -29,7 +32,8 @@ public sealed class FanProsCoreFieldsReportBuilder
         var report =
             new FanProsCoreFieldsReport(
                 _configSettings,
-                _playerRepository);
+                _playerRepository,
+                _preDraftAdjustRepo);
 
         ReportResult<FanProsPlayer> result =
             await report.GenerateAndWriteAsync();
@@ -47,13 +51,16 @@ public sealed class ZscoresReportBuilder
 {
     private readonly ConfigSettings _configSettings;
     private readonly IPlayerRepository _playerRepository;
+    private readonly IPreDraftAdjustRepository _preDraftAdjustRepo;
 
     public ZscoresReportBuilder(
         ConfigSettings configSettings,
-        IPlayerRepository playerRepository)
+        IPlayerRepository playerRepository,
+        IPreDraftAdjustRepository preDraftAdjustRepo)
     {
         _configSettings = configSettings;
         _playerRepository = playerRepository;
+        _preDraftAdjustRepo = preDraftAdjustRepo;
     }
 
     public async Task<ReportResult<object>> GenerateAsync()
@@ -61,7 +68,8 @@ public sealed class ZscoresReportBuilder
         var fanProsReport =
             new FanProsCoreFieldsReport(
                 _configSettings,
-                _playerRepository);
+                _playerRepository,
+                _preDraftAdjustRepo);
 
         ReportResult<FanProsPlayer> fanProsResult =
             await fanProsReport.GenerateAndWriteAsync();
