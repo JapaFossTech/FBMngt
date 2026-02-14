@@ -7,30 +7,27 @@ namespace FBMngt.Services.Reporting.PreDraftRanking;
 public class PlayerOffsetService : IPlayerOffsetService
 {
     private readonly ConfigSettings _configSettings;
-    private IAppSettings AppSettings 
-                                => _configSettings.AppSettings;
     private readonly IPlayerRepository _playerRepository;
     private readonly IPreDraftAdjustRepository _preDraftAdjustRepo;
+    private readonly FanProsCoreFieldsReport _fanProsCoreFieldsReport;
 
     // Ctor
-    public PlayerOffsetService(ConfigSettings configSettings,
-        IPlayerRepository playerRepository,
-        IPreDraftAdjustRepository preDraftAdjustRepository)
+    public PlayerOffsetService(
+                ConfigSettings configSettings,
+                IPlayerRepository playerRepository,
+                IPreDraftAdjustRepository preDraftAdjustRepository,
+                FanProsCoreFieldsReport fanProsCoreFieldsReport)
     {
         _configSettings = configSettings;
         _playerRepository = playerRepository;
         _preDraftAdjustRepo = preDraftAdjustRepository;
+        _fanProsCoreFieldsReport = fanProsCoreFieldsReport;
     }
     public async Task InitialConfigurationAsync()
     {
         Console.WriteLine("Loading FanPros players...");
 
-        var fanProsReport = new FanProsCoreFieldsReport(
-                                            _configSettings,
-                                            _playerRepository,
-                                            _preDraftAdjustRepo);
-
-        var players = await fanProsReport.GenerateAsync();
+        var players = await _fanProsCoreFieldsReport.GenerateAsync();
 
         Console.WriteLine($"Players loaded: {players.Count}");
 

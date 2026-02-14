@@ -11,20 +11,19 @@ public class FanProsCoreFieldsReport
     : ReportBase<FanProsPlayer, FanProsPlayer>
 {
     private readonly ConfigSettings _configSettings;
-    private IAppSettings AppSettings 
-                        => _configSettings.AppSettings;
+    private readonly FanProsCsvReader _fanProsCsvReader;
     private readonly IPreDraftAdjustRepository _preDraftAdjustRepo;
-    private FanProsCsvReader _fanProsCsvReader { get; init; }
 
     // Ctor
     public FanProsCoreFieldsReport(
                     ConfigSettings configSettings,
-                    IPlayerRepository playerRepository,
+                    PlayerResolver playerResolver,
+                    FanProsCsvReader fanProsCsvReader,
                     IPreDraftAdjustRepository preDraftAdjustRepo)
-                    : base(new PlayerResolver(playerRepository))
+                    : base(playerResolver)
     {
         _configSettings = configSettings;
-        _fanProsCsvReader = new FanProsCsvReader();
+        _fanProsCsvReader = fanProsCsvReader;
         _preDraftAdjustRepo = preDraftAdjustRepo;
     }
 
@@ -44,13 +43,6 @@ public class FanProsCoreFieldsReport
     {
         var offsets = await _preDraftAdjustRepo.GetAllAsync();
 
-        //foreach (FanProsPlayer p in input)
-        //{
-        //    if (offsets.TryGetValue(p.PlayerID!.Value, out int off))
-        //        p.Offset = off;
-        //    else
-        //        p.Offset = 0;
-        //}
         foreach (FanProsPlayer p in input)
         {
             if (p.PlayerID.HasValue &&

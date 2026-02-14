@@ -14,11 +14,14 @@ public class PlayerRepository : IPlayerRepository
 {
     private readonly string _connectionString;
 
-    public PlayerRepository(IAppSettings appSettings)
+    //public PlayerRepository(IAppSettings appSettings)
+    //{
+    //    _connectionString = appSettings.MLB_ConnString;
+    //}
+    public PlayerRepository(ConfigSettings configSettings)
     {
-        _connectionString = appSettings.MLB_ConnString;
+        _connectionString = configSettings.MLB_ConnString;
     }
-
     public async Task<List<Player>> GetAllAsync()
     {
         var players = new List<Player>();

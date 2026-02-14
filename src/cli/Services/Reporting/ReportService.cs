@@ -12,29 +12,27 @@ public class ReportService
     private readonly ConfigSettings _configSettings;
     private readonly IPlayerRepository _playerRepository;
     private readonly IPreDraftAdjustRepository _preDraftAdjustRepo;
+    private readonly FanProsCoreFieldsReport _fanProsCoreFieldsReport;
 
     // Ctor
     public ReportService(
-                    IAppSettings appSettings,
+                    ConfigSettings configSettings,
                     IPlayerRepository playerRepository,
-                    IPreDraftAdjustRepository preDraftAdjustRepo)
+                    IPreDraftAdjustRepository preDraftAdjustRepo,
+                    FanProsCoreFieldsReport fanProsCoreFieldsReport)
     {
-        _configSettings = new ConfigSettings(appSettings);
+        _configSettings = configSettings;
         _playerRepository = playerRepository;
         _preDraftAdjustRepo = preDraftAdjustRepo;
+        _fanProsCoreFieldsReport = fanProsCoreFieldsReport;
     }
     // ZScoreReports
     public async Task GenerateZScoreReportsAsync()
     {
         // Generate FanPros report FIRST (source of truth)
-        FanProsCoreFieldsReport fanProsReport =
-            new FanProsCoreFieldsReport(
-                _configSettings,
-                _playerRepository,
-                _preDraftAdjustRepo);
 
         ReportResult<FanProsPlayer> fanProsResult =
-            await fanProsReport.GenerateAndWriteAsync();
+            await _fanProsCoreFieldsReport.GenerateAndWriteAsync();
 
         List<FanProsPlayer> fanProsPlayers =
             fanProsResult.ReportRows;
@@ -74,12 +72,7 @@ public class ReportService
     public async Task GenerateFanProsCoreFieldsReportAsync(
                                                 int rows)
     {
-        var report = new FanProsCoreFieldsReport(
-                                                _configSettings,
-                                                _playerRepository,
-                                                _preDraftAdjustRepo
-                                                );
-        await report.GenerateAndWriteAsync(rows);
+        await _fanProsCoreFieldsReport.GenerateAndWriteAsync(rows);
     }
     public async Task GenerateCombinedReportAsync(
                                     IEnumerable<string> reportNames)
@@ -129,7 +122,8 @@ public class ReportService
                         new FanProsCoreFieldsReportBuilder(
                             _configSettings,
                             _playerRepository,
-                            _preDraftAdjustRepo));
+                            _preDraftAdjustRepo,
+                            _fanProsCoreFieldsReport));
                     break;
 
                 case "zscores":
@@ -137,7 +131,8 @@ public class ReportService
                         new ZscoresReportBuilder(
                             _configSettings,
                             _playerRepository,
-                            _preDraftAdjustRepo));
+                            _preDraftAdjustRepo,
+                            _fanProsCoreFieldsReport));
                     break;
 
                 default:

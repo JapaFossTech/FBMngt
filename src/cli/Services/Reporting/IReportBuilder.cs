@@ -16,27 +16,25 @@ public sealed class FanProsCoreFieldsReportBuilder
     private readonly ConfigSettings _configSettings;
     private readonly IPlayerRepository _playerRepository;
     private readonly IPreDraftAdjustRepository _preDraftAdjustRepo;
+    private readonly FanProsCoreFieldsReport _fanProsCoreFieldsReport;
 
+    // Ctor
     public FanProsCoreFieldsReportBuilder(
         ConfigSettings configSettings,
         IPlayerRepository playerRepository,
-        IPreDraftAdjustRepository preDraftAdjustRepo)
+        IPreDraftAdjustRepository preDraftAdjustRepo,
+        FanProsCoreFieldsReport fanProsCoreFieldsReport)
     {
         _configSettings = configSettings;
         _playerRepository = playerRepository;
         _preDraftAdjustRepo = preDraftAdjustRepo;
+        _fanProsCoreFieldsReport = fanProsCoreFieldsReport;
     }
 
     public async Task<ReportResult<object>> GenerateAsync()
     {
-        var report =
-            new FanProsCoreFieldsReport(
-                _configSettings,
-                _playerRepository,
-                _preDraftAdjustRepo);
-
         ReportResult<FanProsPlayer> result =
-            await report.GenerateAndWriteAsync();
+            await _fanProsCoreFieldsReport.GenerateAndWriteAsync();
 
         return new ReportResult<object>
         {
@@ -52,27 +50,24 @@ public sealed class ZscoresReportBuilder
     private readonly ConfigSettings _configSettings;
     private readonly IPlayerRepository _playerRepository;
     private readonly IPreDraftAdjustRepository _preDraftAdjustRepo;
+    private readonly FanProsCoreFieldsReport _fanProsCoreFieldsReport;
 
     public ZscoresReportBuilder(
         ConfigSettings configSettings,
         IPlayerRepository playerRepository,
-        IPreDraftAdjustRepository preDraftAdjustRepo)
+        IPreDraftAdjustRepository preDraftAdjustRepo,
+        FanProsCoreFieldsReport fanProsCoreFieldsReport)
     {
         _configSettings = configSettings;
         _playerRepository = playerRepository;
         _preDraftAdjustRepo = preDraftAdjustRepo;
+        _fanProsCoreFieldsReport = fanProsCoreFieldsReport;
     }
 
     public async Task<ReportResult<object>> GenerateAsync()
     {
-        var fanProsReport =
-            new FanProsCoreFieldsReport(
-                _configSettings,
-                _playerRepository,
-                _preDraftAdjustRepo);
-
         ReportResult<FanProsPlayer> fanProsResult =
-            await fanProsReport.GenerateAndWriteAsync();
+            await _fanProsCoreFieldsReport.GenerateAndWriteAsync();
 
         List<FanProsPlayer> fanProsPlayers =
             fanProsResult.ReportRows;

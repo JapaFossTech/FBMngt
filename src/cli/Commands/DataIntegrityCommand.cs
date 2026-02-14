@@ -1,10 +1,18 @@
 ﻿using FBMngt.Services;
+using FBMngt.Services.Players;
 
 namespace FBMngt.Commands;
 
-public static class DataIntegrityCommand
+public class DataIntegrityCommand
 {
-    public static async Task ExecuteAsync(string[] args)
+    private readonly PlayerIntegrityService _playerIntegrityService;
+
+    public DataIntegrityCommand(PlayerIntegrityService service)
+    {
+        _playerIntegrityService = service;
+    }
+
+    public async Task ExecuteAsync(string[] args)
     {
         if (args.Length == 0)
         {
@@ -21,8 +29,7 @@ public static class DataIntegrityCommand
         switch (target)
         {
             case "players":
-                var service = new PlayerIntegrityService();
-                await service.RunAllChecksAsync(dryRun);
+                await _playerIntegrityService.RunAllChecksAsync(dryRun);
                 break;
 
             default:

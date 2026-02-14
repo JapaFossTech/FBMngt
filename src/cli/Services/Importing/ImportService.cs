@@ -18,14 +18,6 @@ public class ImportService
     private FanProsCsvReader _fanProsCsvReader { get; init; }
 
     //Ctor
-    public ImportService(IAppSettings appSettings)
-    {
-        _configSettings = new ConfigSettings(appSettings);
-        _playerRepository = new PlayerRepository(appSettings);
-        _playerResolver = new PlayerResolver(_playerRepository);
-        _playerImportService = new PlayerImportService(_playerRepository);
-        _fanProsCsvReader = new FanProsCsvReader();
-    }
     public ImportService(
         ConfigSettings configSettings,
         IPlayerRepository playerRepository,
@@ -50,10 +42,9 @@ public class ImportService
         int? rows)
     {
         // 1. Load DB data
-        var playerRepo = new PlayerRepository(AppSettings);
-        var players = await playerRepo.GetAllAsync();
+        var players = await _playerRepository.GetAllAsync();
 
-        var teamRepo = new TeamRepository();
+        var teamRepo = new TeamRepository(_configSettings);
         var teams = await teamRepo.GetTeamsAsync();
 
         // 2. Build lookups

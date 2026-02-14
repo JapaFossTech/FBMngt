@@ -2,33 +2,37 @@
 
 namespace FBMngt.Commands;
 
-public static class ImportCommand
+public class ImportCommand
 {
-    public static async Task ExecuteAsync(string[] args)
+    private readonly ImportService _importService;
+
+    public ImportCommand(ImportService service)
+    {
+        _importService = service;
+    }
+
+    public async Task ExecuteAsync(string[] args)
     {
         string? matchColumn = null;
         bool showPlayer = false;
         string? fileType = null;
         int? rows = null;
 
-        //Extract parameter values
+        // Extract parameter values
         for (int i = 0; i < args.Length; i++)
         {
-            if (args[i].Equals("--match-column", 
-                                AppConst.IGNORE_CASE)
+            if (args[i].Equals("--match-column", AppConst.IGNORE_CASE)
                 && i + 1 < args.Length)
             {
                 matchColumn = args[i + 1];
             }
 
-            if (args[i].Equals("--show-player",
-                                AppConst.IGNORE_CASE))
+            if (args[i].Equals("--show-player", AppConst.IGNORE_CASE))
             {
                 showPlayer = true;
             }
 
-            if (args[i].Equals("--file-Type",
-                                AppConst.IGNORE_CASE)
+            if (args[i].Equals("--file-Type", AppConst.IGNORE_CASE)
                 && i + 1 < args.Length)
             {
                 fileType = args[i + 1];
@@ -42,10 +46,8 @@ public static class ImportCommand
             }
         }
 
-        var service = new ImportService(new AppSettings());
-
         // Import path (authoritative)
-        await service.ImportPlayersAsync(
+        await _importService.ImportPlayersAsync(
             fileType,
             rows);
 
@@ -54,12 +56,10 @@ public static class ImportCommand
 
         if (matchColumn.HasString())
         {
-            await service.CheckMatchesAsync(matchColumn!,
+            await _importService.CheckMatchesAsync(matchColumn!,
                                             showPlayer,
                                             fileType,
-                                            rows
-                                            );
+                                            rows);
         }
-
     }
 }

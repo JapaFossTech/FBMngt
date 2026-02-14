@@ -1,17 +1,22 @@
 ﻿using FBMngt.Data;
 using FBMngt.Services;
 using FBMngt.Services.Reporting;
+using FBMngt.Services.Yahoo;
 
 namespace FBMngt.Commands;
 
-public static class ReportCommand
+public class ReportCommand
 {
-    public static async Task ExecuteAsync(string[] args)
+    private readonly ReportService _reportService;
+
+    public ReportCommand(ReportService reportService)
+    {
+        _reportService = reportService;
+    }
+    public async Task ExecuteAsync(string[] args)
     {
         var appSettings = new AppSettings();
-        var service = new ReportService(appSettings,
-                        new PlayerRepository(appSettings),
-                        new PreDraftAdjustRepository(appSettings));
+        var configSettings = new ConfigSettings(appSettings);
 
         // Combined report
         if (args.Length > 0 &&
@@ -29,7 +34,7 @@ public static class ReportCommand
             IEnumerable<string> reportNames =
                 combinedValue.Split(',', StringSplitOptions.RemoveEmptyEntries);
 
-            await service.GenerateCombinedReportAsync(reportNames);
+            await _reportService.GenerateCombinedReportAsync(reportNames);
             return;
         }
 
@@ -37,7 +42,7 @@ public static class ReportCommand
         if (args.Length > 0 &&
             args[0].Equals("--zscores", AppConst.IGNORE_CASE))
         {
-            await service.GenerateZScoreReportsAsync();
+            await _reportService.GenerateZScoreReportsAsync();
             return;
         }
 
@@ -56,7 +61,7 @@ public static class ReportCommand
 
         if (isFanProsCoreFields)
         {
-            await service.GenerateFanProsCoreFieldsReportAsync(rows);
+            await _reportService.GenerateFanProsCoreFieldsReportAsync(rows);
             return;
         }
 

@@ -1,12 +1,19 @@
 ﻿using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 
-namespace FBMngt.Services;
+namespace FBMngt.Services.Players;
 
 public class PlayerIntegrityService
 {
-    private readonly string _connStr =
-        Program.Configuration.GetConnectionString("MLB")!;
+    private readonly ConfigSettings _configSettings;
+    private string _connStr => _configSettings.MLB_ConnString;
+
+    //Ctor
+    public PlayerIntegrityService(ConfigSettings configSettings)
+    {
+        _configSettings = configSettings;
+    }
+
 
     public async Task RunAllChecksAsync(bool dryRun)
     {
@@ -29,8 +36,7 @@ public class PlayerIntegrityService
             : "Mode: APPLY CHANGES");
         Console.WriteLine();
 
-        using var conn = new SqlConnection(
-            Program.Configuration.GetConnectionString("MLB"));
+        using var conn = new SqlConnection(_connStr);
 
         await conn.OpenAsync();
 

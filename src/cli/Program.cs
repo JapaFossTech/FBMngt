@@ -1,7 +1,15 @@
 ﻿using FBMngt;
 using FBMngt.Commands;
+using FBMngt.Data;
+using FBMngt.IO.Csv;
 using FBMngt.Services.Importing;
+using FBMngt.Services.Players;
+using FBMngt.Services.Reporting;
+using FBMngt.Services.Reporting.FanPros;
+using FBMngt.Services.Reporting.PreDraftRanking;
+using FBMngt.Services.Yahoo;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 class Program
 {
@@ -10,6 +18,46 @@ class Program
 
     static async Task Main(string[] args)
     {
+        #region Dependency Injection
+
+        var services = new ServiceCollection();
+
+        // config
+        services.AddSingleton<IAppSettings, AppSettings>();
+        services.AddSingleton<ConfigSettings>(sp =>
+        {
+            var appSettings = sp.GetRequiredService<IAppSettings>();
+            return new ConfigSettings(appSettings);
+        });
+
+        // Repositories
+        services.AddTransient<IPlayerRepository, PlayerRepository>();
+        services.AddTransient<
+            IPreDraftAdjustRepository, PreDraftAdjustRepository>();
+
+        // commands
+        services.AddTransient<ImportCommand>();
+        services.AddTransient<DataIntegrityCommand>();
+        services.AddTransient<YahooCommand>();
+        services.AddTransient<ReportCommand>();
+        services.AddTransient<PlayerOffsetCommand>();
+
+        // services
+        services.AddTransient<PlayerResolver>();
+        services.AddTransient<PlayerImportService>();
+        services.AddTransient<FanProsCsvReader>();
+        services.AddTransient<ImportService>();
+        services.AddTransient<YahooService>();
+        services.AddTransient<ReportService>();
+        services.AddTransient<PlayerOffsetService>();
+
+        // reports
+        services.AddTransient<FanProsCoreFieldsReport>();
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        #endregion
+
         var environment = Environment.GetEnvironmentVariable(
                             "DOTNET_ENVIRONMENT") ?? "Development";
         Configuration = new ConfigurationBuilder()
@@ -30,32 +78,40 @@ class Program
         var resolver = new ImportFileResolver();
 
         var command = args[0].ToLowerInvariant();
+        var nonCommandArgs = args.Skip(1).ToArray();
 
         switch (command)
         {
             case "import":  //import --match-column PlayerName --show-player
                 EnsureFanProsInputIsNormalized(resolver, configSettings);
 
-                await ImportCommand
-                        .ExecuteAsync(args.Skip(1).ToArray());
+                var importCommand = serviceProvider
+                                .GetRequiredService<ImportCommand>();
+                await importCommand.ExecuteAsync(nonCommandArgs);
                 break;
             case "report":
                 EnsureFanProsInputIsNormalized(resolver, configSettings);
 
-                await ReportCommand
-                        .ExecuteAsync(args.Skip(1).ToArray());
+                var reportCommand = serviceProvider
+                                .GetRequiredService<ReportCommand>();
+                await reportCommand.ExecuteAsync(nonCommandArgs);
                 break;
             case "data-integrity":  //data-integrity players [--dry-run]
-                await DataIntegrityCommand
-                        .ExecuteAsync(args.Skip(1).ToArray());
+                var dataIntegrityCommand = serviceProvider
+                           .GetRequiredService<DataIntegrityCommand>();
+                await dataIntegrityCommand
+                           .ExecuteAsync(args.Skip(1).ToArray());
                 break;
             case "playeroffset":
-                await PlayerOffsetCommand
-                        .ExecuteAsync(args.Skip(1).ToArray());
+                var offsetCommand = serviceProvider
+                           .GetRequiredService<PlayerOffsetCommand>();
+                await offsetCommand
+                           .ExecuteAsync(args.Skip(1).ToArray());
                 break;
             case "yahoo":
-                await YahooCommand
-                        .ExecuteAsync(args.Skip(1).ToArray());
+                var yahooCommand = serviceProvider
+                                .GetRequiredService<YahooCommand>();
+                await yahooCommand.ExecuteAsync(nonCommandArgs);
                 break;
             default:
                 Console.WriteLine($"Unknown command: {command}");

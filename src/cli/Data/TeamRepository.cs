@@ -6,20 +6,20 @@ using Microsoft.Extensions.Configuration;
 
 public class TeamRepository
 {
-    private readonly string _connectionString;
+    private readonly ConfigSettings _configSettings;
+    private string _connStr => _configSettings.MLB_ConnString;
 
-    public TeamRepository()
+    //Ctor
+    public TeamRepository(ConfigSettings configSettings)
     {
-        _connectionString =
-            Program.Configuration.GetConnectionString("MLB")
-            ?? throw new Exception("Missing connection string 'MLB'");
+        _configSettings = configSettings;
     }
 
     public async Task<List<Team>> GetTeamsAsync()
     {
         var teams = new List<Team>();
 
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new SqlConnection(_connStr);
         using var cmd = new SqlCommand(
             "SELECT TeamID, Team, mlb_org_id, mlb_org_abbrev FROM lktblTeam",
             conn);

@@ -18,9 +18,9 @@ public class PreDraftAdjustRepository : IPreDraftAdjustRepository
         => new SqlConnection(_connectionString);
 
     // Ctor
-    public PreDraftAdjustRepository(IAppSettings appSettings)
+    public PreDraftAdjustRepository(ConfigSettings configSettings)
     {
-        _connectionString = appSettings.MLB_ConnString;
+        _connectionString = configSettings.MLB_ConnString;
     }
     public async Task<Dictionary<int, int>> GetAllAsync()
     {

@@ -2,9 +2,12 @@
 
 namespace FBMngt;
 
-public interface IAppSettings
+public interface IConnectionString
 {
     string MLB_ConnString { get; }
+}
+public interface IAppSettings: IConnectionString
+{
     string FanPros_RelativePath { get; }
     string ImportedFilesPath { get; }
     string ProjectionPath { get; }
@@ -59,7 +62,7 @@ public static class RepoPath
                                        "..", "..", "..", "..", ".."));
 }
 
-public class ConfigSettings
+public class ConfigSettings: IConnectionString
 {
     public IAppSettings AppSettings;
 
@@ -93,4 +96,5 @@ public class ConfigSettings
         }
     }
 
+    public string MLB_ConnString => AppSettings.MLB_ConnString;
 }

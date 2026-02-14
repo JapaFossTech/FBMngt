@@ -1,25 +1,29 @@
-﻿using FBMngt.Services.Yahoo;
+﻿using FBMngt.Services.Players;
+using FBMngt.Services.Yahoo;
 
 namespace FBMngt.Commands;
 
-public static class YahooCommand
+public class YahooCommand
 {
-    public static async Task ExecuteAsync(string[] args)
-    {
-        var configSettings = new ConfigSettings(new AppSettings());
-        var service = new YahooService(configSettings);
+    private readonly YahooService _yahooService;
 
+    public YahooCommand(YahooService yahooService)
+    {
+        _yahooService = yahooService;
+    }
+    public async Task ExecuteAsync(string[] args)
+    {
         if (args.Contains("--showLoginUri"))
         {
-            await service.DisplayLoginUri();
+            await _yahooService.DisplayLoginUri();
             return;
         }
         if (args.Contains("--getAccessToken"))
         {
-            await service.GetAccessToken();
+            await _yahooService.GetAccessToken();
             return;
         }
 
-        await service.RunAsync();
+        await _yahooService.RunAsync();
     }
 }

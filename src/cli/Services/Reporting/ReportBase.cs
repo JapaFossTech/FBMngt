@@ -14,7 +14,7 @@ public abstract class ReportBase<TInput, TReportRow>
     {
         _playerResolver = playerResolver;
     }
-    public async Task<List<TReportRow>> GenerateAsync(
+    public async virtual Task<List<TReportRow>> GenerateAsync(
                                                 int rows = 0)
     {
         Console.WriteLine($"ReportBase: Rows to read:: {rows}");
@@ -29,7 +29,7 @@ public abstract class ReportBase<TInput, TReportRow>
         return await TransformAsync(input);
     }
 
-    public async Task<ReportResult<TReportRow>> 
+    public async virtual Task<ReportResult<TReportRow>> 
         GenerateAndWriteAsync(int rows = 0)
     {
         // 1,2 and 3: Get Data with PalyerID resolved

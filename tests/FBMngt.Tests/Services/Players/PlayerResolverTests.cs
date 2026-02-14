@@ -1,7 +1,9 @@
 ﻿using FBMngt.Data;
+using FBMngt.IO.Csv;
 using FBMngt.Models;
 using FBMngt.Services.Players;
 using FBMngt.Services.Reporting;
+using FBMngt.Services.Reporting.FanPros;
 using FBMngt.Tests.TestDoubles;
 using Moq;
 
@@ -16,6 +18,8 @@ public class ResolvePlayerIDAsyncTests
     private Mock<IPreDraftAdjustRepository> _preDraftAdjustRepoMock;
     private ReportService _reportService;
     private PlayerResolver _playerResolver;
+    private Mock<FanProsCoreFieldsReport> _fanProsReportMock;
+
 
     [SetUp]
     public void SetUp()
@@ -44,9 +48,20 @@ public class ResolvePlayerIDAsyncTests
                     .Setup(x => x.GetAllAsync())
                     .ReturnsAsync(new Dictionary<int, int>());
 
-        _reportService = new ReportService(_fakeAppSettings,
-                                    _playerRepoMock.Object,
-                                    _preDraftAdjustRepoMock.Object);
+        var configSettings = new ConfigSettings(_fakeAppSettings);
+
+        _fanProsReportMock = new Mock<FanProsCoreFieldsReport>(
+            configSettings,
+            _playerResolver,           // or mock if needed
+            new FanProsCsvReader(),
+            _preDraftAdjustRepoMock.Object);
+
+
+        _reportService = new ReportService(
+                            configSettings,
+                            _playerRepoMock.Object,
+                            _preDraftAdjustRepoMock.Object,
+                            _fanProsReportMock.Object);
 
         _playerResolver = new PlayerResolver(
                                         _playerRepoMock.Object);
