@@ -12,7 +12,7 @@ public class PlayerResolver
         _playerRepository = playerRepository;
     }
 
-    public async Task ResolvePlayerIDAsync(
+    public async virtual Task ResolvePlayerIDAsync(
                                 List<IPlayer> inputPlayers)
     {
         if (inputPlayers.Count == 0)

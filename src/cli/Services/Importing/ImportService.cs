@@ -2,8 +2,10 @@
 using FBMngt.IO.Csv;
 using FBMngt.Models;
 using FBMngt.Services.Players;
+using FBMngt.Services.Reporting;
 using FBMngt.Services.Roster;
 using FBMngt.Services.Teams;
+using System.IO;
 
 namespace FBMngt.Services.Importing;
 
@@ -34,7 +36,8 @@ public class ImportService
 
 
     #region CheckMatchesAsync
-    // TODO: ImportPlayersAsync is the only method that should remain here long-term
+    // TODO: ImportPlayersAsync is the only method that should
+    // remain here long-term
     public async Task CheckMatchesAsync(
         string matchColumn,
         bool showPlayer,
@@ -68,9 +71,21 @@ public class ImportService
         if (fileType != null &&
             fileType.Equals("FanPros", AppConst.IGNORE_CASE))
         {
-            string fullPath = _configSettings.FanPros_Rankings_InputCsv_Path;
+            string fullPath = _configSettings
+                            .FanPros_Rankings_InputCsv_Path;
 
-            var fanProsPlayers = _fanProsCsvReader.Read(fullPath, rows ?? 200);
+            var importFileResolver = new ImportFileResolver();
+
+            fullPath = importFileResolver.ResolveNewestFilePath(
+                                fullPath,
+                                ImportNormalizationMode.ResolveOnly);
+
+            //TODO: After moving CheckMatchesAsync(),
+            //replace above with this line
+            //fullPath = _fileSelector.GetFilePath(fullPath);
+
+            var fanProsPlayers = _fanProsCsvReader
+                                .Read(fullPath, rows ?? 200);
 
             ProcessGroup(
                 title: "FanPros Draft Rankings",
@@ -86,7 +101,8 @@ public class ImportService
 
     // ---------------- helpers ----------------
 
-    private static HashSet<string> BuildNameLookup(List<Player> players)
+    private static HashSet<string> BuildNameLookup(
+                                        List<Player> players)
     {
         var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -151,21 +167,20 @@ public class ImportService
             if (!resolvedCsvTeam.IsResolved)
                 continue;
 
-            // Resolve DB team (works if DB stores numeric or abbreviation)
+            // Resolve DB team (works if DB stores numeric
+            // or abbreviation)
             ResolvedTeam resolvedDbTeam;
 
             if (int.TryParse(dbPlayer.organization_id, out var dbId))
             {
-                resolvedDbTeam = ResolvedTeam.Resolved(dbId, teamById.ContainsKey(dbId) ? teamById[dbId] : "UNK");
+                resolvedDbTeam = ResolvedTeam.Resolved(
+                    dbId, teamById.ContainsKey(dbId) ? teamById[dbId] : "UNK");
             }
             else
             {
-                resolvedDbTeam = teamResolver.Resolve(dbPlayer.organization_id);
+                resolvedDbTeam = teamResolver.Resolve(
+                    dbPlayer.organization_id);
             }
-
-            //        Console.WriteLine(
-            //$"{fanPros.PlayerName} | CSV={fanPros.Team} -> {resolvedCsvTeam.TeamId} | " +
-            //$"DB={dbPlayer.organization_id} -> {resolvedDbTeam.TeamId}");
 
             if (!resolvedDbTeam.IsResolved)
                 continue;
@@ -184,7 +199,6 @@ public class ImportService
                     DbTeamId = resolvedDbTeam.TeamId.Value
                 });
             }
-
         }
 
         Console.WriteLine($"=== {title} ===");
@@ -228,6 +242,10 @@ public class ImportService
         // 1️ Load FanPros CSV players
         string fullPath = _configSettings.FanPros_Rankings_InputCsv_Path;
 
+        var importFileResolver = new ImportFileResolver();
+
+        fullPath = importFileResolver.ResolveNewestFilePath(fullPath,
+                                    ImportNormalizationMode.ResolveOnly);
         List<FanProsPlayer> players =
                             _fanProsCsvReader.Read(fullPath, rows ?? 400);
 

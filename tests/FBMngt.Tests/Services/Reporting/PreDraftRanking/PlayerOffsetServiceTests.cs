@@ -2,13 +2,14 @@
 using FBMngt.IO.Csv;
 using FBMngt.Models;
 using FBMngt.Services.Players;
+using FBMngt.Services.Reporting;
 using FBMngt.Services.Reporting.FanPros;
 using FBMngt.Services.Reporting.PreDraftRanking;
 using FBMngt.Tests.TestDoubles;
 using Moq;
 using NUnit.Framework;
 
-namespace FBMngt.Tests.Services;
+namespace FBMngt.Tests.Services.Reporting.PreDraftRanking;
 
 [TestFixture]
 public class PlayerOffsetServiceTests
@@ -29,11 +30,13 @@ public class PlayerOffsetServiceTests
         configSettings = new ConfigSettings(new FakeAppSettings());
         _playerResolverMock = new Mock<PlayerResolver>(
                         _playerRepositoryMock.Object);
+        var _indexedFileSelector = new IndexedFileSelector(0);
         _fanProsReportMock = new Mock<FanProsCoreFieldsReport>(
                         configSettings,
                         _playerResolverMock.Object,
                         new FanProsCsvReader(),
-                        _preDraftAdjustRepoMock.Object);
+                        _preDraftAdjustRepoMock.Object,
+                        _indexedFileSelector);
         _service = new PlayerOffsetService(
                         configSettings,
                         _playerRepositoryMock.Object,
@@ -53,8 +56,10 @@ public class PlayerOffsetServiceTests
         await _service.AdjustAsync(batch);
 
         // Assert
-        _preDraftAdjustRepoMock.Verify(r => r.UpsertAsync(10, 12), Times.Once);
-        _preDraftAdjustRepoMock.Verify(r => r.UpsertAsync(20, -5), Times.Once);
+        _preDraftAdjustRepoMock.Verify(
+            r => r.UpsertAsync(10, 12), Times.Once);
+        _preDraftAdjustRepoMock.Verify
+            (r => r.UpsertAsync(20, -5), Times.Once);
     }
 
     [Test]
@@ -91,8 +96,10 @@ public class PlayerOffsetServiceTests
 
         _preDraftAdjustRepoMock.Verify(r => r.DeleteAllAsync(), Times.Once);
 
-        _preDraftAdjustRepoMock.Verify(r => r.UpsertAsync(1, 12), Times.Once);
-        _preDraftAdjustRepoMock.Verify(r => r.UpsertAsync(2, 24), Times.Once);
+        _preDraftAdjustRepoMock.Verify(
+            r => r.UpsertAsync(1, 12), Times.Once);
+        _preDraftAdjustRepoMock.Verify(
+            r => r.UpsertAsync(2, 24), Times.Once);
 
         _preDraftAdjustRepoMock.Verify(
             r => r.UpsertAsync(3, It.IsAny<int>()),
@@ -109,7 +116,8 @@ public class PlayerOffsetServiceTests
 
         await _service.InitialConfigurationAsync();
 
-        _preDraftAdjustRepoMock.Verify(r => r.DeleteAllAsync(), Times.Once);
+        _preDraftAdjustRepoMock.Verify(
+            r => r.DeleteAllAsync(), Times.Once);
     }
 
 }

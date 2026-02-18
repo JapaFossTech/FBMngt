@@ -13,18 +13,21 @@ public class ReportService
     private readonly IPlayerRepository _playerRepository;
     private readonly IPreDraftAdjustRepository _preDraftAdjustRepo;
     private readonly FanProsCoreFieldsReport _fanProsCoreFieldsReport;
+    private readonly FanProsDeltaReport _fanProsDeltaReport;
 
     // Ctor
     public ReportService(
                     ConfigSettings configSettings,
                     IPlayerRepository playerRepository,
                     IPreDraftAdjustRepository preDraftAdjustRepo,
-                    FanProsCoreFieldsReport fanProsCoreFieldsReport)
+                    FanProsCoreFieldsReport fanProsCoreFieldsReport,
+                    FanProsDeltaReport fanProsDeltaReport)
     {
         _configSettings = configSettings;
         _playerRepository = playerRepository;
         _preDraftAdjustRepo = preDraftAdjustRepo;
         _fanProsCoreFieldsReport = fanProsCoreFieldsReport;
+        _fanProsDeltaReport = fanProsDeltaReport;
     }
     // ZScoreReports
     public async Task GenerateZScoreReportsAsync()
@@ -74,6 +77,7 @@ public class ReportService
     {
         await _fanProsCoreFieldsReport.GenerateAndWriteAsync(rows);
     }
+    #region GenerateCombinedReportAsync()
     public async Task GenerateCombinedReportAsync(
                                     IEnumerable<string> reportNames)
     {
@@ -120,9 +124,6 @@ public class ReportService
                 case "fanproscorefields":
                     builders.Add(
                         new FanProsCoreFieldsReportBuilder(
-                            _configSettings,
-                            _playerRepository,
-                            _preDraftAdjustRepo,
                             _fanProsCoreFieldsReport));
                     break;
 
@@ -131,8 +132,12 @@ public class ReportService
                         new ZscoresReportBuilder(
                             _configSettings,
                             _playerRepository,
-                            _preDraftAdjustRepo,
                             _fanProsCoreFieldsReport));
+                    break;
+                case "fanprosdelta":
+                    builders.Add(
+                        new FanProsDeltaReportBuilder(
+                            _fanProsDeltaReport));
                     break;
 
                 default:
@@ -143,5 +148,9 @@ public class ReportService
 
         return builders;
     }
-
+    #endregion
+    public async Task GenerateFanProsDeltaReportAsync(int rows)
+    {
+        await _fanProsDeltaReport.GenerateAndWriteAsync(rows);
+    }
 }

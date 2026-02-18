@@ -16,36 +16,41 @@ public sealed class ImportFileResolver
     /// Libraries and readers must use ResolveOnly.
     /// </summary>
     public string ResolveNewestFilePath(string inputPath,
-                                        ImportNormalizationMode mode)
+                                      ImportNormalizationMode mode)
     {
         // Validate input
         if (inputPath.IsNullOrEmpty())
-            throw new ArgumentException("Input path must be provided",
-                                        nameof(inputPath));
+            throw new ArgumentException("Input path must be " +
+                "provided", nameof(inputPath));
 
         bool isResolved = TryResolveDescriptor(
-                            inputPath, out ImportFileDescriptor descriptor);
+                            inputPath, 
+                            out ImportFileDescriptor descriptor);
         if (!isResolved)
             throw new ArgumentException(
-                $"Could not resolve directory and filename from '{inputPath}'");
+                $"Could not resolve directory and filename " +
+                $"from '{inputPath}'");
 
-        var directoryInfo = new DirectoryInfo(descriptor.Directory);
+        var directoryInfo = new DirectoryInfo(
+            descriptor.Directory);
 
         if (!directoryInfo.Exists)
-            throw new DirectoryNotFoundException(descriptor.Directory);
+            throw new DirectoryNotFoundException(
+                descriptor.Directory);
 
         EnsureNotBinDirectory(directoryInfo.FullName);
 
         //Get all files (canonical + non-canonical)
         FileInfo[] files = directoryInfo.GetFiles(
-                                            descriptor.SearchPattern,
-                                            SearchOption.TopDirectoryOnly);
+                                     descriptor.SearchPattern,
+                                     SearchOption.TopDirectoryOnly);
 
         //Nothing to work with, halt!
         if (files.Length == 0)
             throw new FileNotFoundException(
-                $@"No files found matching '{descriptor.SearchPattern}' 
-                    in '{descriptor.Directory}'");
+                $"No files found matching " +
+                $"'{descriptor.SearchPattern}' in " +
+                $"'{descriptor.Directory}'");
 
         if (mode == ImportNormalizationMode.NormalizeAndResolve)
         {
@@ -67,7 +72,7 @@ public sealed class ImportFileResolver
     }
 
     private static bool TryResolveDescriptor(string inputPath,
-                                        out ImportFileDescriptor descriptor)
+                               out ImportFileDescriptor descriptor)
     {
         descriptor = default!;
 
@@ -88,7 +93,7 @@ public sealed class ImportFileResolver
         return true;
     }
     private static void ArchiveCanonicalFiles(FileInfo[] files,
-                                              ImportFileDescriptor descriptor)
+                                  ImportFileDescriptor descriptor)
     {
         // Find file to normalize
         FileInfo? canonical =
@@ -124,12 +129,12 @@ public sealed class ImportFileResolver
     {
         if (fullPath.Contains(
                 Path.DirectorySeparatorChar + "bin" 
-                                            + Path.DirectorySeparatorChar,
+                    + Path.DirectorySeparatorChar,
                 AppConst.IGNORE_CASE))
         {
             throw new InvalidOperationException(
-                @"File normalization must not run against build output 
-                directories.");
+                @"File normalization must not run against 
+                build output directories.");
         }
     }
 

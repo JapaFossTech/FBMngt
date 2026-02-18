@@ -66,12 +66,12 @@ public class PlayerOffsetService : IPlayerOffsetService
         Console.WriteLine("Applying manual offsets...");
 
         string[] pairs = batch.Split('|', 
-                                StringSplitOptions.RemoveEmptyEntries);
+                            StringSplitOptions.RemoveEmptyEntries);
 
         foreach (string p in pairs)
         {
             string[] parts = p.Split(',', 
-                                StringSplitOptions.RemoveEmptyEntries);
+                             StringSplitOptions.RemoveEmptyEntries);
 
             if (parts.Length != 2)
                 continue;

@@ -1,6 +1,7 @@
 ﻿using FBMngt.Data;
 using FBMngt.IO.Csv;
 using FBMngt.Models;
+using FBMngt.Services.Importing;
 using FBMngt.Services.Players;
 
 namespace FBMngt.Services.Reporting.ZScore;
@@ -21,15 +22,20 @@ public class ZScorePitcherFileReport
         _fanProsPlayers = fanProsPlayers;
     }
 
-    protected override Task<List<SteamerPitcherProjection>> ReadAsync(int rows)
+    protected override string ResolveFilePath()
     {
-        string inputPath = Path.Combine(
+        string path = Path.Combine(
             _configSettings.AppSettings.ProjectionPath,
             $"{_configSettings.AppSettings.SeasonYear}" +
             "_Steamer_Projections_Pitchers.csv");
 
+        return path;
+    }
+    protected override Task<List<SteamerPitcherProjection>> 
+    ReadAsync(int rows, string filePath)
+    {
         List<SteamerPitcherProjection> items =
-            CsvReader.ReadPitchers(inputPath);
+            CsvReader.ReadPitchers(filePath);
 
         return Task.FromResult(items);
     }

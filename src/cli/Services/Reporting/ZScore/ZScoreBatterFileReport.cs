@@ -1,6 +1,7 @@
 ﻿using FBMngt.Data;
 using FBMngt.IO.Csv;
 using FBMngt.Models;
+using FBMngt.Services.Importing;
 using FBMngt.Services.Players;
 
 namespace FBMngt.Services.Reporting.ZScore;
@@ -21,21 +22,26 @@ public class ZScoreBatterFileReport
         _fanProsPlayers = fanProsPlayers;
     }
 
-    protected override Task<List<SteamerBatterProjection>> ReadAsync(int rows)
+    protected override string ResolveFilePath()
     {
-        string inputPath = Path.Combine(
+        string path = Path.Combine(
             _configSettings.AppSettings.ProjectionPath,
             $"{_configSettings.AppSettings.SeasonYear}" +
             "_Steamer_Projections_Batters.csv");
 
+        return path;
+    }
+    protected override Task<List<SteamerBatterProjection>> 
+    ReadAsync(int rows, string filePath)
+    {
         List<SteamerBatterProjection> items =
-            CsvReader.ReadBatters(inputPath);
+            CsvReader.ReadBatters(filePath);
 
         return Task.FromResult(items);
     }
 
-    protected override Task<List<SteamerBatterProjection>> TransformAsync(
-        List<SteamerBatterProjection> input)
+    protected override Task<List<SteamerBatterProjection>> 
+    TransformAsync(List<SteamerBatterProjection> input)
     {
         // Build FanPros hitter ID set
         HashSet<int> fanProsHitterIds =

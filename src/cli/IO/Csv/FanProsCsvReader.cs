@@ -12,12 +12,6 @@ public class FanProsCsvReader
     {
         Console.WriteLine("FanProsCsvReader.Read: maxRows: " +
             $"{maxRows}, when " + "zero, will read everything.");
-        //Get the file path for the newest csv file
-        //TODO: Consider decoupling here because Filename normalization is not part of csv read
-        var importFileResolver = new ImportFileResolver();
-        path = importFileResolver.ResolveNewestFilePath(path,
-                                    ImportNormalizationMode.ResolveOnly);
-
         Console.WriteLine($"Using FanPros file: "
                             +$"{Path.GetFileName(path)}");
 

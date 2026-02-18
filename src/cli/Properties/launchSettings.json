@@ -2,7 +2,7 @@
   "profiles": {
     "FBMngt": {
       "commandName": "Project",
-      "commandLineArgs": "playerOffset --initialConfiguration --doCreateReport"
+      "commandLineArgs": "report --combine FanProsCoreFields,zscores,FanProsDelta"
     }
   }
 }

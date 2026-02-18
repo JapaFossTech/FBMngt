@@ -46,11 +46,6 @@ public class ImportCommand
             }
         }
 
-        // Import path (authoritative)
-        await _importService.ImportPlayersAsync(
-            fileType,
-            rows);
-
         //Call Check Matches
         // TODO: Move CheckMatchesAsync() to data-integrity command
 
@@ -61,5 +56,10 @@ public class ImportCommand
                                             fileType,
                                             rows);
         }
+
+        // Import path (authoritative)
+        await _importService.ImportPlayersAsync(
+            fileType,
+            rows);
     }
 }

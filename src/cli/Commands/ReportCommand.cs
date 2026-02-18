@@ -18,6 +18,18 @@ public class ReportCommand
         var appSettings = new AppSettings();
         var configSettings = new ConfigSettings(appSettings);
 
+        // Rows
+        int rows = 250;
+
+        if (args.Contains("--rows"))
+        {
+            int idx = Array.IndexOf(args, "--rows");
+            if (idx + 1 < args.Length)
+            {
+                int.TryParse(args[idx + 1], out rows);
+            }
+        }
+
         // Combined report
         if (args.Length > 0 &&
             args[0].Equals("--combine", AppConst.IGNORE_CASE))
@@ -25,14 +37,16 @@ public class ReportCommand
             if (args.Length < 2)
             {
                 Console.WriteLine("Usage:");
-                Console.WriteLine("  FBMngt report --combine FanProsCoreFields,zscores");
+                Console.WriteLine("  FBMngt report --combine " +
+                    "FanProsCoreFields,zscores");
                 return;
             }
 
             string combinedValue = args[1];
 
-            IEnumerable<string> reportNames =
-                combinedValue.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            IEnumerable<string> reportNames = 
+                combinedValue.Split(',', 
+                           StringSplitOptions.RemoveEmptyEntries);
 
             await _reportService.GenerateCombinedReportAsync(reportNames);
             return;
@@ -47,28 +61,34 @@ public class ReportCommand
         }
 
         // FanPros Core Fields report
-        bool isFanProsCoreFields = args.Contains("--FanProsCoreFields");
-        int rows = 250;
-
-        if (args.Contains("--rows"))
-        {
-            int idx = Array.IndexOf(args, "--rows");
-            if (idx + 1 < args.Length)
-            {
-                int.TryParse(args[idx + 1], out rows);
-            }
-        }
+        bool isFanProsCoreFields = args.Contains(
+                                        "--FanProsCoreFields");
 
         if (isFanProsCoreFields)
         {
-            await _reportService.GenerateFanProsCoreFieldsReportAsync(rows);
+            await _reportService
+                        .GenerateFanProsCoreFieldsReportAsync(rows);
+            return;
+        }
+
+        // FanPros Delta report
+        bool isFanProsDelta = args.Contains("--FanProsDelta");
+
+        if (isFanProsDelta)
+        {
+            await _reportService
+                        .GenerateFanProsDeltaReportAsync(rows);
             return;
         }
 
         // No recognized argument -> show help
         Console.WriteLine("Usage:");
         Console.WriteLine("  FBMngt report --zscores");
-        Console.WriteLine("  FBMngt report --FanProsCoreFields [--rows 250]");
-        Console.WriteLine("  FBMngt report --combine FanProsCoreFields,zscores");
+        Console.WriteLine("  FBMngt report --FanProsCoreFields" +
+            " [--rows 250]");
+        Console.WriteLine("  FBMngt report --combine " +
+            "FanProsCoreFields,zscores");
+        Console.WriteLine("  FBMngt report --FanProsDelta " +
+            "[--rows 20]");
     }
 }

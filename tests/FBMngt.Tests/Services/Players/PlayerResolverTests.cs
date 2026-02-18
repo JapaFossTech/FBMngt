@@ -50,21 +50,34 @@ public class ResolvePlayerIDAsyncTests
 
         var configSettings = new ConfigSettings(_fakeAppSettings);
 
+        var _indexedFileSelector = new IndexedFileSelector(0);
+
         _fanProsReportMock = new Mock<FanProsCoreFieldsReport>(
             configSettings,
             _playerResolver,           // or mock if needed
             new FanProsCsvReader(),
-            _preDraftAdjustRepoMock.Object);
-
-
-        _reportService = new ReportService(
-                            configSettings,
-                            _playerRepoMock.Object,
-                            _preDraftAdjustRepoMock.Object,
-                            _fanProsReportMock.Object);
+            _preDraftAdjustRepoMock.Object,
+            _indexedFileSelector);
 
         _playerResolver = new PlayerResolver(
                                         _playerRepoMock.Object);
+
+        var selectorFactory = new FileSelectorFactory();
+
+        var fanProsDeltaReport = new FanProsDeltaReport(
+            configSettings,
+            _playerResolver,
+            new FanProsCsvReader(),
+            _preDraftAdjustRepoMock.Object,
+            selectorFactory);
+
+        _reportService =
+            new ReportService(
+                configSettings,
+                _playerRepoMock.Object,
+                _preDraftAdjustRepoMock.Object,
+                _fanProsReportMock.Object,
+                fanProsDeltaReport);
     }
 
     [Test]

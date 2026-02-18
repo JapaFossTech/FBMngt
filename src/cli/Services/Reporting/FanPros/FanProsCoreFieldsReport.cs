@@ -1,7 +1,9 @@
 ﻿using FBMngt.Data;
 using FBMngt.IO.Csv;
 using FBMngt.Models;
+using FBMngt.Services.Importing;
 using FBMngt.Services.Players;
+using System.IO;
 
 namespace FBMngt.Services.Reporting.FanPros;
 
@@ -13,33 +15,47 @@ public class FanProsCoreFieldsReport
     private readonly ConfigSettings _configSettings;
     private readonly FanProsCsvReader _fanProsCsvReader;
     private readonly IPreDraftAdjustRepository _preDraftAdjustRepo;
+    private readonly IFileSelector _fileSelector;
 
     // Ctor
     public FanProsCoreFieldsReport(
                     ConfigSettings configSettings,
                     PlayerResolver playerResolver,
                     FanProsCsvReader fanProsCsvReader,
-                    IPreDraftAdjustRepository preDraftAdjustRepo)
+                    IPreDraftAdjustRepository preDraftAdjustRepo,
+                    IFileSelector fileSelector)
                     : base(playerResolver)
     {
         _configSettings = configSettings;
         _fanProsCsvReader = fanProsCsvReader;
         _preDraftAdjustRepo = preDraftAdjustRepo;
+        _fileSelector = fileSelector;
     }
 
+    protected override string ResolveFilePath()
+    {
+        string path = _configSettings
+                                .FanPros_Rankings_InputCsv_Path;
 
+        return _fileSelector.GetFilePath(path);
+
+        //var importFileResolver = new ImportFileResolver();
+
+        //path = importFileResolver.ResolveNewestFilePath(path,
+        //                      ImportNormalizationMode.ResolveOnly);
+        //return path;
+    }
     protected override Task<List<FanProsPlayer>> ReadAsync(
-                                                    int rows)
+                                              int rows, string filePath)
     {
         List<FanProsPlayer> items =
-            _fanProsCsvReader.Read(
-                _configSettings.FanPros_Rankings_InputCsv_Path,
-                rows);
+            _fanProsCsvReader.Read(filePath, rows);
 
         return Task.FromResult(items);
     }
 
-    protected override async Task<List<FanProsPlayer>> TransformAsync(List<FanProsPlayer> input)
+    protected override async Task<List<FanProsPlayer>> TransformAsync(
+                                        List<FanProsPlayer> input)
     {
         var offsets = await _preDraftAdjustRepo.GetAllAsync();
 
@@ -97,4 +113,5 @@ public class FanProsCoreFieldsReport
 
         return Task.CompletedTask;
     }
+
 }

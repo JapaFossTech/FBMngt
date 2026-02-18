@@ -46,7 +46,7 @@ public sealed class HorizontalReportAppender
                 }
             }
 
-            string combinedLine = string.Join("\t\t", lineParts);
+            string combinedLine = string.Join("\t\t\t\t\t", lineParts);
             combinedLines.Add(combinedLine);
         }
 

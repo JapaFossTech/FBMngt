@@ -50,9 +50,15 @@ class Program
         services.AddTransient<YahooService>();
         services.AddTransient<ReportService>();
         services.AddTransient<PlayerOffsetService>();
+        services.AddTransient<PlayerIntegrityService>();
+        services.AddSingleton<
+                IFileSelectorFactory, FileSelectorFactory>();
+        services.AddTransient<IFileSelector>(
+                                _ => new IndexedFileSelector(0));
 
         // reports
         services.AddTransient<FanProsCoreFieldsReport>();
+        services.AddTransient<FanProsDeltaReport>();
 
         var serviceProvider = services.BuildServiceProvider();
 
@@ -93,7 +99,7 @@ class Program
                 EnsureFanProsInputIsNormalized(resolver, configSettings);
 
                 var reportCommand = serviceProvider
-                                .GetRequiredService<ReportCommand>();
+                               .GetRequiredService<ReportCommand>();
                 await reportCommand.ExecuteAsync(nonCommandArgs);
                 break;
             case "data-integrity":  //data-integrity players [--dry-run]
@@ -133,19 +139,21 @@ class Program
     {
         Console.WriteLine("FBMngt - Fantasy Baseball Management");
         Console.WriteLine("Commands:");
+
+        Console.WriteLine("  data-integrity players " +
+            "[--dry-run]");
         Console.WriteLine("  import --match-column PlayerName");
         Console.WriteLine("  import --file-Type FanPros " +
             "--rows 2000");
+        Console.WriteLine("  import --file-Type FanPros");
         Console.WriteLine(
             @"  import --match-column ""PLAYER NAME"" --file-Type FanPros [--show-player] [--rows 150]");
         Console.WriteLine("  report --zscores");
-        Console.WriteLine("  data-integrity players " +
-            "[--dry-run]");
+        Console.WriteLine("  report --FanProsDelta --rows 25");
         Console.WriteLine("  report --FanProsCoreFields " +
             "[--rows 250]");
         Console.WriteLine(
-            "  report --combine FanProsCoreFields,zscores");
-        Console.WriteLine("  import --file-Type FanPros");
+            "  report --combine FanProsCoreFields,zscores,FanProsDelta");
         Console.WriteLine(
             "  playerOffset --initialConfiguration "
             +"[--doCreateReport]");
@@ -155,4 +163,8 @@ class Program
         Console.WriteLine("  yahoo [--showLoginUri] " +
             "[--getAccessToken]");
     }
+    // data-integrity players --dry-run
+    // import --file-Type FanPros --match-column PlayerName --rows 400 --show-player
+    // report --FanProsDelta
+    // report --combine FanProsCoreFields,zscores,FanProsDelta
 }

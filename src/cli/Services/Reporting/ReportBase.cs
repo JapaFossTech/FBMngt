@@ -14,16 +14,26 @@ public abstract class ReportBase<TInput, TReportRow>
     {
         _playerResolver = playerResolver;
     }
-    public async virtual Task<List<TReportRow>> GenerateAsync(
-                                                int rows = 0)
+    public async virtual Task<List<TReportRow>> 
+                              GenerateAsync(int rows = 0)
     {
         Console.WriteLine($"ReportBase: Rows to read:: {rows}");
-        // 1️ Read
-        List<TInput> input = await ReadAsync(rows);
+        
+        // 1 Resolve File Path
+        string filePath =  ResolveFilePath();
+
+        List<TInput> input = default!;
+        if (filePath.HasString())
+        {
+            // 1️.1 Read
+            input = await ReadAsync(rows, filePath);
+        }
+        else
+            throw new Exception("Full file path is not provided. Is empty");
 
         // 2️ Resolve PlayerIDs
         await _playerResolver.ResolvePlayerIDAsync(
-            input.Cast<IPlayer>().ToList());
+                                input.Cast<IPlayer>().ToList());
 
         // 3️ Transform
         return await TransformAsync(input);
@@ -50,9 +60,10 @@ public abstract class ReportBase<TInput, TReportRow>
         };
     }
 
-    protected abstract Task<List<TInput>> ReadAsync(int rows);
-
-    // DEFAULT: identity transform when possible
+    #region Helper Functionality
+    protected virtual string ResolveFilePath() => string.Empty;
+    protected abstract Task<List<TInput>> ReadAsync(
+                                int rows, string filePath);
     protected virtual Task<List<TReportRow>> TransformAsync(List<TInput> input)
     {
         if (typeof(TReportRow) == typeof(TInput))
@@ -67,4 +78,6 @@ public abstract class ReportBase<TInput, TReportRow>
     }
     protected abstract List<string> FormatReport(List<TReportRow> rows);
     protected abstract Task WriteAsync(List<string> lines);
+
+    #endregion
 }

@@ -10,17 +10,28 @@ using NUnit.Framework;
 
 namespace FBMngt.Tests.Services.Reporting;
 
+internal sealed class FakeFileSelector : IFileSelector
+{
+    private readonly string _path;
+
+    public FakeFileSelector(string path)
+    {
+        _path = path;
+    }
+
+    public string GetFilePath(string inputPath) => _path;
+}
+
 [TestFixture]
 public class GenerateFanProsCoreFieldsReportAsyncTests
 {
     private FakeAppSettings _fakeAppSettings = new();
     private List<Player> _dbPlayers = default!;
-    private Mock<IPlayerRepository> _playerRepositoryMock = default!;
+    private Mock<IPlayerRepository> 
+                            _playerRepositoryMock = default!;
     private Mock<IPreDraftAdjustRepository> 
                             _preDraftAdjustRepoMock = default!;
     private ReportService _reportService = default!;
-    //private Mock<FanProsCoreFieldsReport> _fanProsReportMock;
-    //private Mock<PlayerResolver> _playerResolverMock;
 
     [SetUp]
     public void SetUp()
@@ -52,18 +63,31 @@ public class GenerateFanProsCoreFieldsReportAsyncTests
         var playerResolver = new PlayerResolver(
                                 _playerRepositoryMock.Object);
 
+        var _indexedFileSelector = new IndexedFileSelector(0);
+
         var fanProsReport = new FanProsCoreFieldsReport(
                 configSettings,
                 playerResolver,
                 new FanProsCsvReader(),
-                _preDraftAdjustRepoMock.Object);
+                _preDraftAdjustRepoMock.Object,
+                _indexedFileSelector);
+
+        var selectorFactory = new FileSelectorFactory();
+
+        var fanProsDeltaReport = new FanProsDeltaReport(
+            configSettings,
+            playerResolver,
+            new FanProsCsvReader(),
+            _preDraftAdjustRepoMock.Object,
+            selectorFactory);
 
         _reportService =
             new ReportService(
                 configSettings,
                 _playerRepositoryMock.Object,
                 _preDraftAdjustRepoMock.Object,
-                fanProsReport);
+                fanProsReport,
+                fanProsDeltaReport);
     }
 
     [Test]

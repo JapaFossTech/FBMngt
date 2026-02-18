@@ -13,21 +13,12 @@ public interface IReportBuilder
 public sealed class FanProsCoreFieldsReportBuilder
                                 : IReportBuilder
 {
-    private readonly ConfigSettings _configSettings;
-    private readonly IPlayerRepository _playerRepository;
-    private readonly IPreDraftAdjustRepository _preDraftAdjustRepo;
     private readonly FanProsCoreFieldsReport _fanProsCoreFieldsReport;
 
     // Ctor
     public FanProsCoreFieldsReportBuilder(
-        ConfigSettings configSettings,
-        IPlayerRepository playerRepository,
-        IPreDraftAdjustRepository preDraftAdjustRepo,
         FanProsCoreFieldsReport fanProsCoreFieldsReport)
     {
-        _configSettings = configSettings;
-        _playerRepository = playerRepository;
-        _preDraftAdjustRepo = preDraftAdjustRepo;
         _fanProsCoreFieldsReport = fanProsCoreFieldsReport;
     }
 
@@ -43,24 +34,23 @@ public sealed class FanProsCoreFieldsReportBuilder
         };
     }
 }
-
 public sealed class ZscoresReportBuilder
                                 : IReportBuilder
 {
     private readonly ConfigSettings _configSettings;
     private readonly IPlayerRepository _playerRepository;
-    private readonly IPreDraftAdjustRepository _preDraftAdjustRepo;
+    //private readonly IPreDraftAdjustRepository _preDraftAdjustRepo;
     private readonly FanProsCoreFieldsReport _fanProsCoreFieldsReport;
 
     public ZscoresReportBuilder(
         ConfigSettings configSettings,
         IPlayerRepository playerRepository,
-        IPreDraftAdjustRepository preDraftAdjustRepo,
+        //IPreDraftAdjustRepository preDraftAdjustRepo,
         FanProsCoreFieldsReport fanProsCoreFieldsReport)
     {
         _configSettings = configSettings;
         _playerRepository = playerRepository;
-        _preDraftAdjustRepo = preDraftAdjustRepo;
+        //_preDraftAdjustRepo = preDraftAdjustRepo;
         _fanProsCoreFieldsReport = fanProsCoreFieldsReport;
     }
 
@@ -104,6 +94,30 @@ public sealed class ZscoresReportBuilder
         {
             ReportRows = new List<object>(),
             StringLines = combinedResult.StringLines
+        };
+    }
+}
+public sealed class FanProsDeltaReportBuilder
+                                : IReportBuilder
+{
+    private readonly FanProsDeltaReport _fanProsDeltaReport;
+
+    public FanProsDeltaReportBuilder(
+        FanProsDeltaReport fanProsDeltaReport
+        )
+    {
+        _fanProsDeltaReport = fanProsDeltaReport;
+    }
+
+    public async Task<ReportResult<object>> GenerateAsync()
+    {
+        ReportResult<FanProsDeltaRow> result =
+            await _fanProsDeltaReport.GenerateAndWriteAsync(0);
+
+        return new ReportResult<object>
+        {
+            ReportRows = new List<object>(),
+            StringLines = result.StringLines
         };
     }
 }
