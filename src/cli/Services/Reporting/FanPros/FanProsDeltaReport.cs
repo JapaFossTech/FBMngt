@@ -58,9 +58,10 @@ public sealed class FanProsDeltaReport
 
         // 3️ Create lookup by PlayerID
 
-        var previousById = previous
-            .Where(p => p.PlayerID.HasValue)
-            .ToDictionary(p => p.PlayerID!.Value);
+        Dictionary<int, FanProsPlayer> previousById = previous
+        .Where(p => p.PlayerID.HasValue)
+        .DistinctBy(p => p.PlayerID!.Value)
+        .ToDictionary(p => p.PlayerID!.Value);
 
         // 4️ Compute movement
 

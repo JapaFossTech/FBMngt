@@ -1,11 +1,13 @@
 ﻿using FBMngt;
 using FBMngt.Commands;
 using FBMngt.Data;
+using FBMngt.IO;
 using FBMngt.IO.Csv;
 using FBMngt.Services.Importing;
 using FBMngt.Services.Players;
 using FBMngt.Services.Reporting;
 using FBMngt.Services.Reporting.FanPros;
+using FBMngt.Services.Reporting.PreDraft;
 using FBMngt.Services.Reporting.PreDraftRanking;
 using FBMngt.Services.Yahoo;
 using Microsoft.Extensions.Configuration;
@@ -55,10 +57,14 @@ class Program
                 IFileSelectorFactory, FileSelectorFactory>();
         services.AddTransient<IFileSelector>(
                                 _ => new IndexedFileSelector(0));
+        services.AddTransient<YahooPreDraftRankingReader>();
+
 
         // reports
         services.AddTransient<FanProsCoreFieldsReport>();
         services.AddTransient<FanProsDeltaReport>();
+        services.AddTransient<PreDraftRankingMovementReport>();
+
 
         var serviceProvider = services.BuildServiceProvider();
 
@@ -167,4 +173,6 @@ class Program
     // import --file-Type FanPros --match-column PlayerName --rows 400 --show-player
     // report --FanProsDelta
     // report --combine FanProsCoreFields,zscores,FanProsDelta
+
+    // report --PreDraftRankingMovement
 }

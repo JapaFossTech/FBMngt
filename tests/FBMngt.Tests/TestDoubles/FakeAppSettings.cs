@@ -9,6 +9,7 @@ public class FakeAppSettings : IAppSettings
         => _configSettings.FanPros_Rankings_InputCsv_Path;
 
     public string FanPros_RelativePath { get; set; }
+    public string Yahoo_RelativePath { get; set; }
 
     public string ImportedFilesPath { get; set; }
 
@@ -24,8 +25,8 @@ public class FakeAppSettings : IAppSettings
 
     public string Yahoo_RefreshToken => throw new NotImplementedException();
 
-    //public string MLB_ConnString => "Server=localhost\\SQLEXPRESS;Database=MLB;Trusted_Connection=True;Connection Timeout=180;TrustServerCertificate=True;";
     public string MLB_ConnString => "FakeConnectionString";
+
 
     public FakeAppSettings()
     {
@@ -34,6 +35,7 @@ public class FakeAppSettings : IAppSettings
         ReportPath = "C:\\Users\\Master2022\\Documents\\"
                     +"Javier\\FantasyBaseball\\Logs\\Test"; ;
         FanPros_RelativePath = "FanPros";
+        Yahoo_RelativePath = "Yahoo";
         ImportedFilesPath = "C:\\Users\\Master2022\\Documents"
                 +"\\Javier\\FantasyBaseball\\ImportedFiles";
         ProjectionPath = "C:\\Users\\Master2022\\Documents"

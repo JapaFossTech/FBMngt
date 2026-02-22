@@ -4,6 +4,7 @@ using FBMngt.Models;
 using FBMngt.Services.Players;
 using FBMngt.Services.Reporting.Display;
 using FBMngt.Services.Reporting.FanPros;
+using FBMngt.Services.Reporting.PreDraft;
 using FBMngt.Services.Reporting.ZScore;
 
 namespace FBMngt.Services.Reporting;
@@ -14,6 +15,9 @@ public class ReportService
     private readonly IPreDraftAdjustRepository _preDraftAdjustRepo;
     private readonly FanProsCoreFieldsReport _fanProsCoreFieldsReport;
     private readonly FanProsDeltaReport _fanProsDeltaReport;
+    private readonly PreDraftRankingMovementReport
+    _preDraftRankingMovementReport;
+
 
     // Ctor
     public ReportService(
@@ -21,13 +25,17 @@ public class ReportService
                     IPlayerRepository playerRepository,
                     IPreDraftAdjustRepository preDraftAdjustRepo,
                     FanProsCoreFieldsReport fanProsCoreFieldsReport,
-                    FanProsDeltaReport fanProsDeltaReport)
+                    FanProsDeltaReport fanProsDeltaReport,
+                    PreDraftRankingMovementReport 
+                            preDraftRankingMovementReport)
     {
         _configSettings = configSettings;
         _playerRepository = playerRepository;
         _preDraftAdjustRepo = preDraftAdjustRepo;
         _fanProsCoreFieldsReport = fanProsCoreFieldsReport;
         _fanProsDeltaReport = fanProsDeltaReport;
+        _preDraftRankingMovementReport = 
+                                    preDraftRankingMovementReport;
     }
     // ZScoreReports
     public async Task GenerateZScoreReportsAsync()
@@ -153,4 +161,11 @@ public class ReportService
     {
         await _fanProsDeltaReport.GenerateAndWriteAsync(rows);
     }
+
+    public async Task GeneratePreDraftRankingMovementReportAsync()
+    {
+        await _preDraftRankingMovementReport
+            .GenerateAndWriteAsync();
+    }
+
 }

@@ -26,11 +26,11 @@ public class FanProsCsvReader
         };
 
         // Read header
-        var header = parser.ReadFields();
+        string[]? header = parser.ReadFields();
         if (header is null)
             return result;
 
-        var colIndex = header
+        Dictionary<string, int> colIndex = header
             .Select((name, index) => new { name, index })
             .ToDictionary(x => x.name.Trim('"'), x => x.index,
                           StringComparer.OrdinalIgnoreCase);
@@ -43,17 +43,27 @@ public class FanProsCsvReader
                                     && count >= maxRows.Value)
                 break;
 
-            var cols = parser.ReadFields();
-            if (cols == null || cols.Length == 0)
+            string[]? cols = parser.ReadFields();
+            if (cols == null || cols.Length <= 1)
                 continue;
 
-            var player = new FanProsPlayer
+            FanProsPlayer player = null!;
+            try
             {
-                PlayerName = cols[colIndex["PLAYER NAME"]].Trim(),
-                Team = cols[colIndex["TEAM"]].Trim(),
-                Position = cols[colIndex["POS"]].Trim(),
-                Rank = int.TryParse(cols[colIndex["RK"]], out var r) ? r : 0
-            };
+                player = new FanProsPlayer
+                {
+                    PlayerName = cols[colIndex["PLAYER NAME"]].Trim(),
+                    Team = cols[colIndex["TEAM"]].Trim(),
+                    Position = cols[colIndex["POS"]].Trim(),
+                    Rank = int.TryParse(cols[colIndex["RK"]], out var r) ? r : 0
+                };
+            }
+            catch
+            {
+                Console.WriteLine("Error while parsing data, count: " +
+                    $"{count}, cols.Length: {cols.Length}");
+                throw;
+            }
 
             result.Add(player);
             count++;

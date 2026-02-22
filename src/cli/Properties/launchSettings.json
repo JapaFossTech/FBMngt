@@ -2,7 +2,7 @@
   "profiles": {
     "FBMngt": {
       "commandName": "Project",
-      "commandLineArgs": "report --combine FanProsCoreFields,zscores,FanProsDelta"
+      "commandLineArgs": "report --PreDraftRankingMovement"
     }
   }
 }

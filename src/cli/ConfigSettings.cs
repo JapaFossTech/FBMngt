@@ -9,6 +9,7 @@ public interface IConnectionString
 public interface IAppSettings: IConnectionString
 {
     string FanPros_RelativePath { get; }
+    string Yahoo_RelativePath { get; }
     string ImportedFilesPath { get; }
     string ProjectionPath { get; }
     string ReportPath { get; }
@@ -36,6 +37,9 @@ public class AppSettings : IAppSettings
     public string FanPros_RelativePath =>
         Program.Configuration["Paths:FanPros"]
         ?? throw new Exception("Missing config Paths:FanPros");
+    public string Yahoo_RelativePath =>
+        Program.Configuration["Paths:Yahoo"]
+        ?? throw new Exception("Missing config Paths:Yahoo");
 
     public string Yahoo_ClientId =>
         Program.Configuration["YahooOAuth:ClientId"]
@@ -53,6 +57,7 @@ public class AppSettings : IAppSettings
     public string MLB_ConnString => 
         Program.Configuration.GetConnectionString("MLB")
             ?? throw new Exception("Missing connection string 'MLB'");
+
 }
 public static class RepoPath
 {
@@ -91,6 +96,19 @@ public class ConfigSettings: IConnectionString
             var fanProsCsvFile = Path.Combine(
             AppSettings.ReportPath,
             $"FBMngt_FanPros_CoreFields_{AppSettings.SeasonYear}.tsv");
+
+            return fanProsCsvFile;
+        }
+    }
+    public string Yahoo_PreDraftRankings_Path
+    {
+        get
+        {
+            var fanProsCsvFile = Path.Combine(
+                RepoPath.Root,
+                "rawData",
+                AppSettings.Yahoo_RelativePath,
+                "YahooPreDraftRankings.txt");
 
             return fanProsCsvFile;
         }

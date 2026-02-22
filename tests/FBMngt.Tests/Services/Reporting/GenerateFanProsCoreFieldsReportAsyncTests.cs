@@ -4,6 +4,7 @@ using FBMngt.Models;
 using FBMngt.Services.Players;
 using FBMngt.Services.Reporting;
 using FBMngt.Services.Reporting.FanPros;
+using FBMngt.Services.Reporting.PreDraft;
 using FBMngt.Tests.TestDoubles;
 using Moq;
 using NUnit.Framework;
@@ -87,7 +88,9 @@ public class GenerateFanProsCoreFieldsReportAsyncTests
                 _playerRepositoryMock.Object,
                 _preDraftAdjustRepoMock.Object,
                 fanProsReport,
-                fanProsDeltaReport);
+                fanProsDeltaReport,
+                preDraftRankingMovementReport: null!
+                );
     }
 
     [Test]

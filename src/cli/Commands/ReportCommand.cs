@@ -81,6 +81,19 @@ public class ReportCommand
             return;
         }
 
+        // PreDraft Ranking Movement report
+        bool isPreDraftMovement = args.Contains(
+                                        "--PreDraftRankingMovement");
+
+        if (isPreDraftMovement)
+        {
+            await _reportService
+                .GeneratePreDraftRankingMovementReportAsync();
+
+            return;
+        }
+
+
         // No recognized argument -> show help
         Console.WriteLine("Usage:");
         Console.WriteLine("  FBMngt report --zscores");
@@ -90,5 +103,8 @@ public class ReportCommand
             "FanProsCoreFields,zscores");
         Console.WriteLine("  FBMngt report --FanProsDelta " +
             "[--rows 20]");
+        Console.WriteLine("  FBMngt " +
+            "report --PreDraftRankingMovement");
+
     }
 }
