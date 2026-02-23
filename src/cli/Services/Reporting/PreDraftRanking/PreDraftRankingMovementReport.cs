@@ -4,8 +4,9 @@ using FBMngt.IO.Csv;
 using FBMngt.Models;
 using FBMngt.Services.Players;
 using FBMngt.Services.Reporting.FanPros;
+using FBMngt.Services.Reporting.PreDraftRanking;
 
-namespace FBMngt.Services.Reporting.PreDraft;
+namespace FBMngt.Services.Reporting.PreDraftRanking;
 
 public class PreDraftMovementRow
 {
@@ -21,20 +22,24 @@ public class PreDraftRankingMovementReport
     private readonly ConfigSettings _configSettings;
     private readonly YahooPreDraftRankingReader _yahooReader;
     private readonly PlayerResolver _playerResolver;
-    private readonly FanProsCoreFieldsReport 
+    private readonly FanProsCoreFieldsReport
                                         _fanProsCoreFieldsReport;
+    private readonly IPreDraftRankingMovementCalculator
+                                        _movementCalculator;
 
     public PreDraftRankingMovementReport(
         ConfigSettings configSettings,
         YahooPreDraftRankingReader yahooReader,
         PlayerResolver playerResolver,
-        FanProsCoreFieldsReport fanProsCoreFieldsReport
+        FanProsCoreFieldsReport fanProsCoreFieldsReport,
+        IPreDraftRankingMovementCalculator movementCalculator
         )
     {
         _configSettings = configSettings;
         _yahooReader = yahooReader;
         _playerResolver = playerResolver;
         _fanProsCoreFieldsReport = fanProsCoreFieldsReport;
+        _movementCalculator = movementCalculator;
     }
 
     public async Task GenerateAndWriteAsync()
@@ -74,127 +79,32 @@ public class PreDraftRankingMovementReport
         // At this point, starting and Target
         // have their PlayerIDs resolved.
 
-        // Prepare simulation list
+        // Move all needed players
 
-        List<FanProsPlayer> simulationPlayerList = startPlayers
-                .Where(p => p.PlayerID.HasValue)
-                .ToList();
+        var movementRows = _movementCalculator
+                .CalculateMovement(startPlayers, targetPlayers);
 
-        List<int> originalYahooOrder_PlayerID =
-            simulationPlayerList
-                .Select(p => p.PlayerID!.Value)
-                .ToList();
-        // Reduce the target list to only have the original list
+        // Write to TSV
 
-        targetPlayers = targetPlayers
-            .Where(p =>
-                p.PlayerID.HasValue &&
-                originalYahooOrder_PlayerID.Contains(
-                    p.PlayerID.Value))
-            .ToList();
-
-        if (simulationPlayerList.Count != targetPlayers.Count)
-        {
-            Console.WriteLine(
-                "Warning: Player universe mismatch detected.");
-        }
-
-        var movementByPlayerId = new Dictionary<int, int>();
-
-        // Loop target playes to move them if necessary
-
-        for (int targetIndex = 0;
-             targetIndex < targetPlayers.Count;
-             targetIndex++)
-        {
-            FanProsPlayer targetPlayer = targetPlayers[targetIndex];
-
-            if (!targetPlayer.PlayerID.HasValue)
-            {
-                if (targetIndex <= 350)
-                    Console.WriteLine("");
-                continue;
-            }
-
-            int targetPlayerId = targetPlayer.PlayerID.Value;
-
-            // Get player index from the simulation, from the start
-            // list that is changing with previous moves
-            int playerIndexFromSimulation =
-                simulationPlayerList
-                    .FindIndex(p =>
-                        p.PlayerID == targetPlayerId);
-
-            if (playerIndexFromSimulation == -1)
-            {
-                if (targetIndex <= 350)
-                    Console.WriteLine($"Target player '{targetPlayer}' " +
-                    $"(with target index: {targetIndex}) " +
-                    $"not found in original start list");
-                continue; // not in original start list
-            }
-
-            // IMPORTANT:
-            // Clamp targetIndex to valid range
-            int safeTargetIndex =
-                Math.Min(targetIndex,
-                         simulationPlayerList.Count - 1);
-
-            int movement = playerIndexFromSimulation 
-                            - safeTargetIndex;
-
-            movementByPlayerId[targetPlayerId] = movement;
-
-            if (movement != 0)
-            {
-                FanProsPlayer playerToMove =
-                    simulationPlayerList[playerIndexFromSimulation];
-
-                // Target position removed from working list,
-                // All below players move up 1
-                simulationPlayerList
-                    .RemoveAt(playerIndexFromSimulation);
-
-                // Because we removed 1, when moving down, make
-                // sure the target index is within the simulation
-                if (playerIndexFromSimulation < safeTargetIndex)
-                    safeTargetIndex--;
-
-                // Target position inserted into working list using
-                // his safeTargetIndex.Players move down 1 poistion.
-                simulationPlayerList
-                    .Insert(safeTargetIndex, playerToMove);
-            }
-        }
         Console.WriteLine();
         Console.WriteLine("Movement Report (Non-Zero Only)");
         Console.WriteLine("--------------------------------");
 
-        // Write to TSV
-
         var outputLines = new List<string>();
         outputLines.Add("PlayerName\tMovement");
 
-        foreach (int originalPlayerId in originalYahooOrder_PlayerID)
+        foreach (var row in movementRows)
         {
-            FanProsPlayer player =
-                startPlayers.First(p =>
-                    p.PlayerID == originalPlayerId);
-
-            int movement =
-                movementByPlayerId
-                    .ContainsKey(originalPlayerId)
-                ? movementByPlayerId[originalPlayerId]
-                : 0;
-
-            if (movement == 0)
+            if (row.Movement == 0)
                 continue;
 
-            outputLines.Add($"{player.PlayerName}\t{movement}");
+            outputLines.Add(
+                $"{row.PlayerName}\t{row.Movement}");
 
             Console.WriteLine(
-                $"{player.PlayerName} {movement:+#;-#;0}");
+                $"{row.PlayerName} {row.Movement:+#;-#;0}");
         }
+
         string outputPath = Path.Combine(
             _configSettings.AppSettings.ReportPath,
             $"FBMngt_PreDraftMovement_" +

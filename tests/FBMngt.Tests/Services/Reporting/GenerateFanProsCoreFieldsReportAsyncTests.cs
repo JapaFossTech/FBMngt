@@ -4,7 +4,7 @@ using FBMngt.Models;
 using FBMngt.Services.Players;
 using FBMngt.Services.Reporting;
 using FBMngt.Services.Reporting.FanPros;
-using FBMngt.Services.Reporting.PreDraft;
+using FBMngt.Services.Reporting.PreDraftRanking;
 using FBMngt.Tests.TestDoubles;
 using Moq;
 using NUnit.Framework;

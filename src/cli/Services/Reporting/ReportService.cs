@@ -4,7 +4,7 @@ using FBMngt.Models;
 using FBMngt.Services.Players;
 using FBMngt.Services.Reporting.Display;
 using FBMngt.Services.Reporting.FanPros;
-using FBMngt.Services.Reporting.PreDraft;
+using FBMngt.Services.Reporting.PreDraftRanking;
 using FBMngt.Services.Reporting.ZScore;
 
 namespace FBMngt.Services.Reporting;

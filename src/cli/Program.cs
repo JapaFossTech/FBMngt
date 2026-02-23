@@ -7,7 +7,7 @@ using FBMngt.Services.Importing;
 using FBMngt.Services.Players;
 using FBMngt.Services.Reporting;
 using FBMngt.Services.Reporting.FanPros;
-using FBMngt.Services.Reporting.PreDraft;
+using FBMngt.Services.Reporting.PreDraftRanking;
 using FBMngt.Services.Reporting.PreDraftRanking;
 using FBMngt.Services.Yahoo;
 using Microsoft.Extensions.Configuration;
@@ -58,7 +58,8 @@ class Program
         services.AddTransient<IFileSelector>(
                                 _ => new IndexedFileSelector(0));
         services.AddTransient<YahooPreDraftRankingReader>();
-
+        services.AddSingleton<IPreDraftRankingMovementCalculator, 
+                              PreDraftRankingMovementCalculator>();
 
         // reports
         services.AddTransient<FanProsCoreFieldsReport>();
