@@ -54,8 +54,8 @@ public class FanProsCoreFieldsReport
         return Task.FromResult(items);
     }
 
-    protected override async Task<List<FanProsPlayer>> TransformAsync(
-                                        List<FanProsPlayer> input)
+    protected override async Task<List<FanProsPlayer>> 
+        TransformAsync(List<FanProsPlayer> input)
     {
         var offsets = await _preDraftAdjustRepo.GetAllAsync();
 
@@ -90,13 +90,15 @@ public class FanProsCoreFieldsReport
         List<string> lines = new();
 
         lines.Add(
-            "PlayerID\tPLAYER NAME\tTEAM\tPOS\tRANK\tOFFSET\tADJUSTED");
+            "PlayerID\tPLAYER NAME\tTEAM\tPOS\tRANK\tOFFSET" +
+            "\tADJUSTED\tPosAbrv\tPosRank");
 
         foreach (FanProsPlayer p in rows)
         {
             lines.Add(
                 $"{p.PlayerID}\t{p.PlayerName}\t{p.Team}\t{p.Position}" +
-                $"\t{p.Rank}\t{p.Offset}\t{p.AdjustedRank}");
+                $"\t{p.Rank}\t{p.Offset}\t{p.AdjustedRank}" +
+                $"\t{p.GetPositionCode()}\t{p.GetPositionNumber()}");
         }
 
         return lines;

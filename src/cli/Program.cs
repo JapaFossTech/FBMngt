@@ -7,7 +7,7 @@ using FBMngt.Services.Importing;
 using FBMngt.Services.Players;
 using FBMngt.Services.Reporting;
 using FBMngt.Services.Reporting.FanPros;
-using FBMngt.Services.Reporting.PreDraftRanking;
+using FBMngt.Services.Reporting.MockDrafts;
 using FBMngt.Services.Reporting.PreDraftRanking;
 using FBMngt.Services.Yahoo;
 using Microsoft.Extensions.Configuration;
@@ -34,8 +34,10 @@ class Program
 
         // Repositories
         services.AddTransient<IPlayerRepository, PlayerRepository>();
-        services.AddTransient<
-            IPreDraftAdjustRepository, PreDraftAdjustRepository>();
+        services.AddTransient<IPreDraftAdjustRepository, 
+                              PreDraftAdjustRepository>();
+        services.AddTransient<IMockDraftRepository, 
+                              MockDraftRepository>();
 
         // commands
         services.AddTransient<ImportCommand>();
@@ -65,7 +67,7 @@ class Program
         services.AddTransient<FanProsCoreFieldsReport>();
         services.AddTransient<FanProsDeltaReport>();
         services.AddTransient<PreDraftRankingMovementReport>();
-
+        services.AddTransient<MockMarketDeltaReport>();
 
         var serviceProvider = services.BuildServiceProvider();
 
@@ -96,18 +98,22 @@ class Program
         switch (command)
         {
             case "import":  //import --match-column PlayerName --show-player
-                EnsureFanProsInputIsNormalized(resolver, configSettings);
+                EnsureFanProsInputIsNormalized(
+                                resolver, configSettings);
 
                 var importCommand = serviceProvider
-                                .GetRequiredService<ImportCommand>();
-                await importCommand.ExecuteAsync(nonCommandArgs);
+                        .GetRequiredService<ImportCommand>();
+                await importCommand
+                        .ExecuteAsync(nonCommandArgs);
                 break;
             case "report":
-                EnsureFanProsInputIsNormalized(resolver, configSettings);
+                EnsureFanProsInputIsNormalized(
+                                resolver, configSettings);
 
                 var reportCommand = serviceProvider
-                               .GetRequiredService<ReportCommand>();
-                await reportCommand.ExecuteAsync(nonCommandArgs);
+                       .GetRequiredService<ReportCommand>();
+                await reportCommand
+                            .ExecuteAsync(nonCommandArgs);
                 break;
             case "data-integrity":  //data-integrity players [--dry-run]
                 var dataIntegrityCommand = serviceProvider
@@ -149,7 +155,8 @@ class Program
 
         Console.WriteLine("  data-integrity players " +
             "[--dry-run]");
-        Console.WriteLine("  import --match-column PlayerName");
+        Console.WriteLine(
+            "  import --match-column PlayerName");
         Console.WriteLine("  import --file-Type FanPros " +
             "--rows 2000");
         Console.WriteLine("  import --file-Type FanPros");
@@ -159,6 +166,8 @@ class Program
         Console.WriteLine("  report --FanProsDelta --rows 25");
         Console.WriteLine("  report --FanProsCoreFields " +
             "[--rows 250]");
+        Console.WriteLine("  report --MockMarketDelta " +
+            "--days 14");
         Console.WriteLine(
             "  report --combine FanProsCoreFields,zscores,FanProsDelta");
         Console.WriteLine(
@@ -170,10 +179,12 @@ class Program
         Console.WriteLine("  yahoo [--showLoginUri] " +
             "[--getAccessToken]");
     }
-    // data-integrity players --dry-run
+    // playerOffset --initialConfiguration
+
     // import --file-Type FanPros --match-column PlayerName --rows 400 --show-player
-    // report --FanProsDelta
+    // data-integrity players --dry-run
     // report --combine FanProsCoreFields,zscores,FanProsDelta
 
     // report --PreDraftRankingMovement
+    // report --MockMarketDelta --days 6
 }

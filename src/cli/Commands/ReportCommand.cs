@@ -83,7 +83,7 @@ public class ReportCommand
 
         // PreDraft Ranking Movement report
         bool isPreDraftMovement = args.Contains(
-                                        "--PreDraftRankingMovement");
+                                "--PreDraftRankingMovement");
 
         if (isPreDraftMovement)
         {
@@ -93,6 +93,28 @@ public class ReportCommand
             return;
         }
 
+        // Mock Market Delta report
+        bool isMockMarketDelta = args.Contains(
+                                        "--MockMarketDelta");
+
+        if (isMockMarketDelta)
+        {
+            int days = 14; // default
+
+            if (args.Contains("--days"))
+            {
+                int idx = Array.IndexOf(args, "--days");
+                if (idx + 1 < args.Length)
+                {
+                    int.TryParse(args[idx + 1], out days);
+                }
+            }
+
+            await _reportService
+                .GenerateMockMarketDeltaReportAsync(days);
+
+            return;
+        }
 
         // No recognized argument -> show help
         Console.WriteLine("Usage:");

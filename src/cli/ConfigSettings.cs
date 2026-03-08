@@ -95,7 +95,19 @@ public class ConfigSettings: IConnectionString
         {
             var fanProsCsvFile = Path.Combine(
             AppSettings.ReportPath,
-            $"FBMngt_FanPros_CoreFields_{AppSettings.SeasonYear}.tsv");
+            $"FBMngt_FanPros_CoreFields_" +
+            $"{AppSettings.SeasonYear}.tsv");
+
+            return fanProsCsvFile;
+        }
+    }
+    public string Mock_Market_Delta_Path
+    {
+        get
+        {
+            var fanProsCsvFile = Path.Combine(
+            AppSettings.ReportPath,
+            $"FBMngt_MockMarketDelta.tsv");
 
             return fanProsCsvFile;
         }

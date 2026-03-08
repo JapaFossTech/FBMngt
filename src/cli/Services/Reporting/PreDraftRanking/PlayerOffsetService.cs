@@ -27,7 +27,12 @@ public class PlayerOffsetService : IPlayerOffsetService
     {
         Console.WriteLine("Loading FanPros players...");
 
-        var players = await _fanProsCoreFieldsReport.GenerateAsync();
+        List<FanProsPlayer> players = await 
+                    _fanProsCoreFieldsReport
+                    .GenerateAsync();
+
+        players = players.Where(p => p.PlayerID.HasValue)
+                         .ToList();
 
         Console.WriteLine($"Players loaded: {players.Count}");
 
@@ -44,7 +49,7 @@ public class PlayerOffsetService : IPlayerOffsetService
             if (player.IsCatcher())
             {
                 await _preDraftAdjustRepo.UpsertAsync(
-                                    player.PlayerID!.Value, 12);
+                              player.PlayerID!.Value, 0);
                 inserted++;
                 continue;
             }
@@ -52,13 +57,14 @@ public class PlayerOffsetService : IPlayerOffsetService
             if (player.IsCloser())
             {
                 await _preDraftAdjustRepo.UpsertAsync(
-                                    player.PlayerID!.Value, 24);
+                              player.PlayerID!.Value, 6);
                 inserted++;
                 continue;
             }
         }
 
-        Console.WriteLine($"Baseline offsets inserted: {inserted}");
+        Console.WriteLine($"Baseline offsets inserted: " +
+            $"{inserted}");
     }
 
     public async Task AdjustAsync(string batch)
@@ -66,12 +72,12 @@ public class PlayerOffsetService : IPlayerOffsetService
         Console.WriteLine("Applying manual offsets...");
 
         string[] pairs = batch.Split('|', 
-                            StringSplitOptions.RemoveEmptyEntries);
+                     StringSplitOptions.RemoveEmptyEntries);
 
         foreach (string p in pairs)
         {
             string[] parts = p.Split(',', 
-                             StringSplitOptions.RemoveEmptyEntries);
+                     StringSplitOptions.RemoveEmptyEntries);
 
             if (parts.Length != 2)
                 continue;
@@ -84,7 +90,8 @@ public class PlayerOffsetService : IPlayerOffsetService
 
             await _preDraftAdjustRepo.UpsertAsync(playerId, offset);
 
-            Console.WriteLine($"Player {playerId} → {offset}");
+            Console.WriteLine($"Player {playerId} " +
+                $"→ {offset}");
         }
 
         Console.WriteLine("Done.");

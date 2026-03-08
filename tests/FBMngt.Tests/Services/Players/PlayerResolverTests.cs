@@ -4,6 +4,7 @@ using FBMngt.Models;
 using FBMngt.Services.Players;
 using FBMngt.Services.Reporting;
 using FBMngt.Services.Reporting.FanPros;
+using FBMngt.Services.Reporting.MockDrafts;
 using FBMngt.Services.Reporting.PreDraftRanking;
 using FBMngt.Tests.TestDoubles;
 using Moq;
@@ -78,7 +79,8 @@ public class ResolvePlayerIDAsyncTests
                 _preDraftAdjustRepoMock.Object,
                 _fanProsReportMock.Object,
                 fanProsDeltaReport,
-                preDraftRankingMovementReport: null!
+                preDraftRankingMovementReport: null!,
+                mockMarketDeltaReport: null!
                 );
     }
 

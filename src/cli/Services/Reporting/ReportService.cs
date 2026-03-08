@@ -4,6 +4,7 @@ using FBMngt.Models;
 using FBMngt.Services.Players;
 using FBMngt.Services.Reporting.Display;
 using FBMngt.Services.Reporting.FanPros;
+using FBMngt.Services.Reporting.MockDrafts;
 using FBMngt.Services.Reporting.PreDraftRanking;
 using FBMngt.Services.Reporting.ZScore;
 
@@ -16,18 +17,21 @@ public class ReportService
     private readonly FanProsCoreFieldsReport _fanProsCoreFieldsReport;
     private readonly FanProsDeltaReport _fanProsDeltaReport;
     private readonly PreDraftRankingMovementReport
-    _preDraftRankingMovementReport;
+                            _preDraftRankingMovementReport;
+    private readonly MockMarketDeltaReport 
+                            _mockMarketDeltaReport;
 
 
     // Ctor
     public ReportService(
-                    ConfigSettings configSettings,
-                    IPlayerRepository playerRepository,
-                    IPreDraftAdjustRepository preDraftAdjustRepo,
-                    FanProsCoreFieldsReport fanProsCoreFieldsReport,
-                    FanProsDeltaReport fanProsDeltaReport,
-                    PreDraftRankingMovementReport 
-                            preDraftRankingMovementReport)
+            ConfigSettings configSettings,
+            IPlayerRepository playerRepository,
+            IPreDraftAdjustRepository preDraftAdjustRepo,
+            FanProsCoreFieldsReport fanProsCoreFieldsReport,
+            FanProsDeltaReport fanProsDeltaReport,
+            PreDraftRankingMovementReport 
+                            preDraftRankingMovementReport,
+            MockMarketDeltaReport mockMarketDeltaReport)
     {
         _configSettings = configSettings;
         _playerRepository = playerRepository;
@@ -35,7 +39,8 @@ public class ReportService
         _fanProsCoreFieldsReport = fanProsCoreFieldsReport;
         _fanProsDeltaReport = fanProsDeltaReport;
         _preDraftRankingMovementReport = 
-                                    preDraftRankingMovementReport;
+                              preDraftRankingMovementReport;
+        _mockMarketDeltaReport = mockMarketDeltaReport;
     }
     // ZScoreReports
     public async Task GenerateZScoreReportsAsync()
@@ -157,15 +162,27 @@ public class ReportService
         return builders;
     }
     #endregion
-    public async Task GenerateFanProsDeltaReportAsync(int rows)
+
+    // FanProsDelta
+    public async Task GenerateFanProsDeltaReportAsync(
+                                                int rows)
     {
         await _fanProsDeltaReport.GenerateAndWriteAsync(rows);
     }
 
-    public async Task GeneratePreDraftRankingMovementReportAsync()
+    // PreDraftRankingMovement
+
+    public async Task 
+                GeneratePreDraftRankingMovementReportAsync()
     {
         await _preDraftRankingMovementReport
             .GenerateAndWriteAsync();
     }
 
+    // MockMarketDelta
+    public async Task GenerateMockMarketDeltaReportAsync(
+                                                int days)
+    {
+        await _mockMarketDeltaReport.GenerateAsync(days);
+    }
 }

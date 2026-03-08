@@ -13,11 +13,6 @@ public interface IPlayerRepository
 public class PlayerRepository : IPlayerRepository
 {
     private readonly string _connectionString;
-
-    //public PlayerRepository(IAppSettings appSettings)
-    //{
-    //    _connectionString = appSettings.MLB_ConnString;
-    //}
     public PlayerRepository(ConfigSettings configSettings)
     {
         _connectionString = configSettings.MLB_ConnString;
