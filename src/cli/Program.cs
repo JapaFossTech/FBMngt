@@ -183,7 +183,7 @@ class Program
 
     // import --file-Type FanPros --match-column PlayerName --rows 400 --show-player
     // data-integrity players --dry-run
-    // report --combine FanProsCoreFields,zscores,FanProsDelta
+    // report --combine FanProsCoreFields,zscores,FanProsDelta,MockMarketDelta
 
     // report --PreDraftRankingMovement
     // report --MockMarketDelta --days 6

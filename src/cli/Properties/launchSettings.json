@@ -2,7 +2,7 @@
   "profiles": {
     "FBMngt": {
       "commandName": "Project",
-      "commandLineArgs": "report --MockMarketDelta --days 6"
+      "commandLineArgs": "report --PreDraftRankingMovement"
     }
   }
 }

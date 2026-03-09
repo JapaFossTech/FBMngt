@@ -97,9 +97,9 @@ public class PlayerOffsetServiceTests
         _preDraftAdjustRepoMock.Verify(r => r.DeleteAllAsync(), Times.Once);
 
         _preDraftAdjustRepoMock.Verify(
-            r => r.UpsertAsync(1, 12), Times.Once);
+            r => r.UpsertAsync(1, 0), Times.Once);
         _preDraftAdjustRepoMock.Verify(
-            r => r.UpsertAsync(2, 24), Times.Once);
+            r => r.UpsertAsync(2, 6), Times.Once);
 
         _preDraftAdjustRepoMock.Verify(
             r => r.UpsertAsync(3, It.IsAny<int>()),

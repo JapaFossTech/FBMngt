@@ -42,11 +42,13 @@ public sealed class HorizontalReportAppender
                 }
                 else
                 {
-                    lineParts.Add(string.Empty);
+                    lineParts.Add(report.AllTabsReportLine);
+                    //lineParts.Add(string.Empty);
                 }
             }
 
-            string combinedLine = string.Join("\t\t\t\t\t", lineParts);
+            string combinedLine = string.Join("\t\t\t\t\t", 
+                                              lineParts);
             combinedLines.Add(combinedLine);
         }
 

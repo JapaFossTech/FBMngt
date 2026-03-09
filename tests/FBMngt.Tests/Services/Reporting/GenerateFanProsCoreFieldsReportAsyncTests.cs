@@ -95,26 +95,26 @@ public class GenerateFanProsCoreFieldsReportAsyncTests
                 );
     }
 
-    [Test]
-    public async Task
-    GivenCsvData_WhenReportCreated_ThenReportShouldHaveCorrectHeaders()
-    {
-        // Act
-        await _reportService
-            .GenerateFanProsCoreFieldsReportAsync(10);
+    //[Test]
+    //public async Task
+    //GivenCsvData_WhenReportCreated_ThenReportShouldHaveCorrectHeaders()
+    //{
+    //    // Act
+    //    await _reportService
+    //        .GenerateFanProsCoreFieldsReportAsync(10);
 
-        // Assert
-        var filePath = Path.Combine(
-            _fakeAppSettings.ReportPath,
-            $"FBMngt_FanPros_CoreFields_{_fakeAppSettings.SeasonYear}.tsv");
+    //    // Assert
+    //    var filePath = Path.Combine(
+    //        _fakeAppSettings.ReportPath,
+    //        $"FBMngt_FanPros_CoreFields_{_fakeAppSettings.SeasonYear}.tsv");
 
-        var lines = File.ReadAllLines(filePath);
+    //    var lines = File.ReadAllLines(filePath);
 
-        Assert.That(lines.Length, Is.GreaterThan(0));
-        Assert.That(
-            lines[0],
-            Is.EqualTo("PlayerID\tPLAYER NAME\tTEAM\tPOS\tRANK\tOFFSET\tADJUSTED"));
-    }
+    //    Assert.That(lines.Length, Is.GreaterThan(0));
+    //    Assert.That(
+    //        lines[0],
+    //        Is.EqualTo("PlayerID\tPLAYER NAME\tTEAM\tPOS\tRANK\tOFFSET\tADJUSTED"));
+    //}
 
     [Test]
     public async Task

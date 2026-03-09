@@ -1,7 +1,9 @@
 ﻿using FBMngt.Data;
 using FBMngt.Models;
 using FBMngt.Services.Reporting.FanPros;
+using FBMngt.Services.Reporting.MockDrafts;
 using FBMngt.Services.Reporting.ZScore;
+using static FBMngt.Services.Reporting.MockDrafts.MockMarketDeltaReport;
 
 namespace FBMngt.Services.Reporting;
 
@@ -113,6 +115,28 @@ public sealed class FanProsDeltaReportBuilder
     {
         ReportResult<FanProsDeltaRow> result =
             await _fanProsDeltaReport.GenerateAndWriteAsync(0);
+
+        return new ReportResult<object>
+        {
+            ReportRows = new List<object>(),
+            StringLines = result.StringLines
+        };
+    }
+}
+public sealed class MockMarketDeltaReportBuilder
+                                : IReportBuilder
+{
+    private readonly MockMarketDeltaReport _mockMarketDeltaReport;
+
+    public MockMarketDeltaReportBuilder
+        (MockMarketDeltaReport mockMarketDeltaReport)
+    {
+        _mockMarketDeltaReport = mockMarketDeltaReport;
+    }
+    public async Task<ReportResult<object>> GenerateAsync()
+    {
+        ReportResult<MarketIntelligenceRow> result =
+            await _mockMarketDeltaReport.GenerateAsync(6);
 
         return new ReportResult<object>
         {

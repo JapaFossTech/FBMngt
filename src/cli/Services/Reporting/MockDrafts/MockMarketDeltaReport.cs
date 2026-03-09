@@ -8,7 +8,7 @@ namespace FBMngt.Services.Reporting.MockDrafts;
 
 public class MockMarketDeltaReport
 {
-    private sealed class MarketIntelligenceRow
+    public sealed class MarketIntelligenceRow
     {
         public int PlayerID { get; init; }
         public string PlayerName { get; init; }
@@ -42,8 +42,19 @@ public class MockMarketDeltaReport
         // pressure classification
         public string PressureTier { get; init; } = string.Empty;
 
+        // Market Access
+        public int MarketAccess { get; init; }
+        public decimal MarketAccessNormalized { get; init; }
+        public string MarketAccessTier { get; init; } = string.Empty;
+
+        // DraftCollision
+        public decimal DraftCollisionRound { get; init; }
+        public decimal DraftCollisionPick { get; init; }
+        public decimal DraftOpportunityScore { get; init; }
+        public string DraftOpportunityTier { get; init; } 
+                                                    = string.Empty;
         public MockDraftMarketStat Source { get; init; }
-                                            = default!;
+                                                    = default!;
     }
 
     private readonly ConfigSettings _configSettings;
@@ -67,8 +78,14 @@ public class MockMarketDeltaReport
         _fanProsReport = fanProsReport;
     }
 
-    public async Task GenerateAsync(int days)
+    public async Task<ReportResult<MarketIntelligenceRow>> 
+    GenerateAsync(int days)
     {
+        var result = new ReportResult<MarketIntelligenceRow>()
+        {
+            ReportRows = [], StringLines = []
+        };
+
         DateTime endDate = DateTime.Today;
         DateTime startDate = endDate.AddDays(-days);
 
@@ -80,7 +97,7 @@ public class MockMarketDeltaReport
         if (marketStats.Count == 0)
         {
             Console.WriteLine("No mock draft data found.");
-            return;
+            return result;
         }
 
         // 2️ Resolve PlayerIDs
@@ -94,7 +111,7 @@ public class MockMarketDeltaReport
         if (totalDrafts == 0)
         {
             Console.WriteLine("No drafts detected.");
-            return;
+            return result;
         }
 
         Console.WriteLine($"Detected {totalDrafts} mock drafts.");
@@ -121,7 +138,10 @@ public class MockMarketDeltaReport
             "\tDisagreement Tier" +
             "\tThreshold Used" +
             "\tAdoption Rate\tSignal Type" +
-            "\tDraft Pressure Score\tPressure Tier");
+            "\tDraft Pressure Score\tPressure Tier\tMarket Access" +
+            "\tZ-Market Access\tMarket Access Tier" +
+            "\tDraft Collision Round\tDraft Collision Pick" +
+            "\tDraft Opportunity Score\tDraft Opportunity Tier");
 
         var intelligenceRows = new List<MarketIntelligenceRow>();
 
@@ -205,6 +225,20 @@ public class MockMarketDeltaReport
             }
             string disagreementTier = GetDisagreementTier(marketDisagreement);
 
+            // Accessibility
+            int marketAccess = stat.PickMax - myRank;
+
+            decimal marketAccessNormalized = 0m;
+
+            if (stat.PickStDev > 0)
+            {
+                marketAccessNormalized =
+                    marketAccess / (decimal)stat.PickStDev;
+            }
+
+            string marketAccessTier = GetMarketAccessTier(
+                                            marketAccessNormalized);
+
             // Determine Signal Type
             string signalType;
 
@@ -243,6 +277,26 @@ public class MockMarketDeltaReport
                     pressureTier = "Minimal";
             }
 
+            // Collision ADP to MyRank
+            decimal collisionPick = (marketAdp + myRank) / 2m;
+            decimal draftCollisionRound = collisionPick / 12m;
+
+            // draftOpportunityScore
+            decimal valueEdge = 0m;
+
+            if (marketDisagreement < 0)
+            {
+                valueEdge = -marketDisagreement;
+            }
+            decimal draftOpportunityScore =
+                valueEdge *
+                marketAccessNormalized *
+                (Decimal)adoptionRate;
+
+            string draftOpportunityTier = GetDraftOpportunityTier(
+                                    draftOpportunityScore);
+
+            // Add MarketIntelligenceRow
             if (doConsider)
             {
                 intelligenceRows.Add(
@@ -261,6 +315,15 @@ public class MockMarketDeltaReport
                         SignalType = signalType,
                         DraftPressureScore = draftPressureScore,
                         PressureTier = pressureTier,
+                        MarketAccess = marketAccess,
+                        MarketAccessNormalized = 
+                                            marketAccessNormalized,
+                        MarketAccessTier = marketAccessTier,
+                        DraftCollisionRound = draftCollisionRound,
+                        DraftCollisionPick = collisionPick,
+                        DraftOpportunityScore = 
+                                            draftOpportunityScore,
+                        DraftOpportunityTier = draftOpportunityTier,
                         Source = stat
                     });
             }
@@ -272,9 +335,9 @@ public class MockMarketDeltaReport
                 .OrderBy(x => x.MyRank)
                 .ToList();
 
-        foreach (var row in sortedRows)
+        foreach (MarketIntelligenceRow row in sortedRows)
         {
-            var r = row.Source;
+            MockDraftMarketStat r = row.Source;
 
             sb.AppendLine(
                 $"{row.PlayerID}\t" +
@@ -295,16 +358,95 @@ public class MockMarketDeltaReport
                 $"{row.ThresholdUsed}\t" +
                 $"{row.AdoptionRate:P2}\t" +
                 $"{row.SignalType}\t" +
-                $"{row.DraftPressureScore:F2}\t" +
-                $"{row.PressureTier}");
+                $"{row.DraftPressureScore:F1}\t" +
+                $"{row.PressureTier}\t" +
+                $"{row.MarketAccess}\t" +
+                $"{row.MarketAccessNormalized:F1}\t" +
+                $"{row.MarketAccessTier}\t" +
+                $"{row.DraftCollisionRound:F1}\t" +
+                $"{row.DraftCollisionPick:F0}\t" +
+                $"{row.DraftOpportunityScore:F1}\t" +
+                $"{row.DraftOpportunityTier}");
         }
 
         string fileName = _configSettings
                           .Mock_Market_Delta_Path;
 
-        File.WriteAllText(fileName, sb.ToString());
+        string reportBody = sb.ToString();
+
+        //File.WriteAllText(fileName, reportBody);
 
         Console.WriteLine($"Report written: {fileName}");
+
+        result.StringLines.AddRange(reportBody
+            .Split(Environment.NewLine, 
+                   StringSplitOptions.RemoveEmptyEntries)
+            .ToList()
+            );
+
+        return result;
+    }
+
+    private string GetDraftOpportunityTier(
+                                    decimal draftOpportunityScore)
+    {
+        string draftOpportunityTier;
+
+        if (draftOpportunityScore <= 0m)
+        {
+            draftOpportunityTier = "None";
+        }
+        else if (draftOpportunityScore < 0.5m)
+        {
+            draftOpportunityTier = "Weak";
+        }
+        else if (draftOpportunityScore < 1m)
+        {
+            draftOpportunityTier = "Good";
+        }
+        else if (draftOpportunityScore < 2m)
+        {
+            draftOpportunityTier = "Strong";
+        }
+        else
+        {
+            draftOpportunityTier = "Elite";
+        }
+
+        return draftOpportunityTier;
+    }
+
+    private string GetMarketAccessTier(
+                                    decimal marketAccessNormalized)
+    {
+        string marketAccessTier;
+
+        if (marketAccessNormalized < -2m)
+        {
+            marketAccessTier = "Impossible";
+        }
+        else if (marketAccessNormalized < -1m)
+        {
+            marketAccessTier = "VeryUnlikely";
+        }
+        else if (marketAccessNormalized < 0m)
+        {
+            marketAccessTier = "Rare";
+        }
+        else if (marketAccessNormalized < 1m)
+        {
+            marketAccessTier = "Reachable";
+        }
+        else if (marketAccessNormalized < 2m)
+        {
+            marketAccessTier = "UsuallyFalls";
+        }
+        else
+        {
+            marketAccessTier = "MarketGift";
+        }
+
+        return marketAccessTier;
     }
 
     private string GetDisagreementTier(decimal marketDisagreement)

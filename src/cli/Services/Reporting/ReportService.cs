@@ -152,6 +152,11 @@ public class ReportService
                         new FanProsDeltaReportBuilder(
                             _fanProsDeltaReport));
                     break;
+                case "mockmarketdelta":
+                    builders.Add(
+                        new MockMarketDeltaReportBuilder(
+                            _mockMarketDeltaReport));
+                    break;
 
                 default:
                     throw new InvalidOperationException(
