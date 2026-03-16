@@ -9,11 +9,18 @@ public interface IMockDraftRepository
     Task<List<MockDraftMarketStat>> GetMockMarketStatsAsync(
                                         DateTime startDate,
                                         DateTime endDate);
+    Task<List<MockDraftPick>> GetMockDraftPicksAsync(
+                                        DateTime startDate,
+                                        DateTime endDate);
 }
 
 public class MockDraftRepository : IMockDraftRepository
 {
     private readonly string _connectionString;
+    private SqlConnection CreateConnection()
+    {
+        return new SqlConnection(_connectionString);
+    }
 
     // Ctor
     public MockDraftRepository(ConfigSettings configSettings)
@@ -95,8 +102,58 @@ public class MockDraftRepository : IMockDraftRepository
         return results;
     }
 
-    private SqlConnection CreateConnection()
+    public async Task<List<MockDraftPick>>
+    GetMockDraftPicksAsync(DateTime startDate,
+                           DateTime endDate)
     {
-        return new SqlConnection(_connectionString);
+        List<MockDraftPick> results = new();
+
+        using SqlConnection connection = CreateConnection();
+        await connection.OpenAsync();
+
+        string sql = @"
+        SELECT
+            PlayerName,
+            PickNumber,
+            [Round],
+            DraftDate
+        FROM Draft
+        WHERE DraftTypeDesc = 'Mockup'
+          AND DraftDate >= @StartDate
+          AND DraftDate <= @EndDate
+          AND IsMyPick = 0
+        ORDER BY DraftDate, PickNumber;";
+
+        using SqlCommand command = new(sql, connection);
+
+        command.Parameters.Add(
+            new SqlParameter("@StartDate", SqlDbType.DateTime)
+            {
+                Value = startDate
+            });
+
+        command.Parameters.Add(
+            new SqlParameter("@EndDate", SqlDbType.DateTime)
+            {
+                Value = endDate
+            });
+
+        using SqlDataReader reader =
+            await command.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
+        {
+            var pick = new MockDraftPick
+            {
+                PlayerName = reader.GetString(0),
+                PickNumber = reader.GetInt32(1),
+                RoundNumber = reader.GetInt32(2),
+                DraftDate = reader.GetDateTime(3)
+            };
+
+            results.Add(pick);
+        }
+
+        return results;
     }
 }

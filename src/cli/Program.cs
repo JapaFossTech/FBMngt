@@ -76,7 +76,8 @@ class Program
         var environment = Environment.GetEnvironmentVariable(
                             "DOTNET_ENVIRONMENT") ?? "Development";
         Configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
+            //.SetBasePath(Directory.GetCurrentDirectory())
+            .SetBasePath(AppContext.BaseDirectory)
             .AddJsonFile("appsettings.json", optional: false)
             .AddJsonFile($"appsettings.{environment}.json",
                          optional: true)
@@ -187,4 +188,5 @@ class Program
 
     // report --PreDraftRankingMovement
     // report --MockMarketDelta --days 6
+    // report --PositionDraftDistribution --days 6
 }

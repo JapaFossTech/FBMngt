@@ -117,6 +117,7 @@ public class MockMarketDeltaReport
         Console.WriteLine($"Detected {totalDrafts} mock drafts.");
 
         // 4️ Load FanPros ranks
+        // This reports reads from FanPros csv file and loads positions
         List<FanProsPlayer> fanPros =
             await _fanProsReport.GenerateAsync();
 
