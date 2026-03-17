@@ -121,7 +121,6 @@ public class MockDraftRepository : IMockDraftRepository
         WHERE DraftTypeDesc = 'Mockup'
           AND DraftDate >= @StartDate
           AND DraftDate <= @EndDate
-          AND IsMyPick = 0
         ORDER BY DraftDate, PickNumber;";
 
         using SqlCommand command = new(sql, connection);

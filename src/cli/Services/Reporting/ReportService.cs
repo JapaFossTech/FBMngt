@@ -20,6 +20,8 @@ public class ReportService
                             _preDraftRankingMovementReport;
     private readonly MockMarketDeltaReport 
                             _mockMarketDeltaReport;
+    private readonly PositionDraftDistributionReport
+                            _positionDraftDistributionReport;
 
 
     // Ctor
@@ -31,7 +33,9 @@ public class ReportService
             FanProsDeltaReport fanProsDeltaReport,
             PreDraftRankingMovementReport 
                             preDraftRankingMovementReport,
-            MockMarketDeltaReport mockMarketDeltaReport)
+            MockMarketDeltaReport mockMarketDeltaReport,
+            PositionDraftDistributionReport positionDraftDistributionReport
+        )
     {
         _configSettings = configSettings;
         _playerRepository = playerRepository;
@@ -41,6 +45,7 @@ public class ReportService
         _preDraftRankingMovementReport = 
                               preDraftRankingMovementReport;
         _mockMarketDeltaReport = mockMarketDeltaReport;
+        _positionDraftDistributionReport = positionDraftDistributionReport;
     }
     // ZScoreReports
     public async Task GenerateZScoreReportsAsync()
@@ -91,6 +96,8 @@ public class ReportService
         await _fanProsCoreFieldsReport.GenerateAndWriteAsync(rows);
     }
     #region GenerateCombinedReportAsync()
+
+    // Combined (horizontal)
     public async Task GenerateCombinedReportAsync(
                                     IEnumerable<string> reportNames)
     {
@@ -156,6 +163,11 @@ public class ReportService
                     builders.Add(
                         new MockMarketDeltaReportBuilder(
                             _mockMarketDeltaReport));
+                    break;
+                case "positiondraftdistribution":
+                    builders.Add(
+                        new PositionDraftDistributionReportBuilder(
+                            _positionDraftDistributionReport));
                     break;
 
                 default:

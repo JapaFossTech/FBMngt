@@ -80,7 +80,8 @@ public class ResolvePlayerIDAsyncTests
                 _fanProsReportMock.Object,
                 fanProsDeltaReport,
                 preDraftRankingMovementReport: null!,
-                mockMarketDeltaReport: null!
+                mockMarketDeltaReport: null!,
+                positionDraftDistributionReport: null!
                 );
     }
 

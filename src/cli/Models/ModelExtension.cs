@@ -64,14 +64,41 @@ public static class IPlayerExtension
         if (string.IsNullOrWhiteSpace(player.Position))
             return null;
 
+        string position = player.Position;
+
+        // Remove trailing numbers first (RP12 -> RP)
         var number = player.GetPositionNumber();
 
-        if (number == null)
-            return player.Position;
+        if (number != null)
+        {
+            var numberLength = number.Value.ToString().Length;
+            position = position.Substring(
+                                0, position.Length - numberLength);
+        }
 
-        var numberLength = number.Value.ToString().Length;
+        // Normalize compound positions
+        if (position.Contains(','))
+        {
+            var parts = position.Split(',');
 
-        return player.Position.Substring(0, 
-                            player.Position.Length - numberLength);
+            // SP,RP should be treated as SP
+            if (parts.Contains("SP"))
+                return "SP";
+
+            if (parts.Contains("RP"))
+                return "RP";
+
+            position = parts[0];
+        }
+
+        // Normalize OF positions
+        if (position == "CF" ||
+            position == "RF" ||
+            position == "LF")
+        {
+            return "OF";
+        }
+
+        return position;
     }
 }

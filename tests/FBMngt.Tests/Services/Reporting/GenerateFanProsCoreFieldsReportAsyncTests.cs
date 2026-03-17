@@ -91,7 +91,8 @@ public class GenerateFanProsCoreFieldsReportAsyncTests
                 fanProsReport,
                 fanProsDeltaReport,
                 preDraftRankingMovementReport: null!,
-                mockMarketDeltaReport: null!
+                mockMarketDeltaReport: null!,
+                positionDraftDistributionReport: null!
                 );
     }
 

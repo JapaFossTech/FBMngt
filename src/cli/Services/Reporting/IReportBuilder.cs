@@ -4,6 +4,7 @@ using FBMngt.Services.Reporting.FanPros;
 using FBMngt.Services.Reporting.MockDrafts;
 using FBMngt.Services.Reporting.ZScore;
 using static FBMngt.Services.Reporting.MockDrafts.MockMarketDeltaReport;
+using static FBMngt.Services.Reporting.MockDrafts.PositionDraftDistributionReport;
 
 namespace FBMngt.Services.Reporting;
 
@@ -137,6 +138,29 @@ public sealed class MockMarketDeltaReportBuilder
     {
         ReportResult<MarketIntelligenceRow> result =
             await _mockMarketDeltaReport.GenerateAsync(6);
+
+        return new ReportResult<object>
+        {
+            ReportRows = new List<object>(),
+            StringLines = result.StringLines
+        };
+    }
+}
+public sealed class PositionDraftDistributionReportBuilder
+                                : IReportBuilder
+{
+    private readonly PositionDraftDistributionReport 
+                                            _positionDraftDistributionReport;
+
+    public PositionDraftDistributionReportBuilder
+        (PositionDraftDistributionReport positionDraftDistributionReport)
+    {
+        _positionDraftDistributionReport = positionDraftDistributionReport;
+    }
+    public async Task<ReportResult<object>> GenerateAsync()
+    {
+        ReportResult<PositionDraftDistributionRow> result =
+            await _positionDraftDistributionReport.GenerateAsync(6);
 
         return new ReportResult<object>
         {
