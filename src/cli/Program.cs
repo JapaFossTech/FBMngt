@@ -69,6 +69,7 @@ class Program
         services.AddTransient<PreDraftRankingMovementReport>();
         services.AddTransient<MockMarketDeltaReport>();
         services.AddTransient<PositionDraftDistributionReport>();
+        services.AddTransient<PositionRunDetectionReport>();
 
         var serviceProvider = services.BuildServiceProvider();
 
@@ -185,7 +186,7 @@ class Program
 
     // import --file-Type FanPros --match-column PlayerName --rows 400 --show-player
     // data-integrity players --dry-run
-    // report --combine FanProsCoreFields,zscores,FanProsDelta,MockMarketDelta,PositionDraftDistribution
+    // report --combine FanProsCoreFields,zscores,FanProsDelta,MockMarketDelta,PositionDraftDistribution,PositionRunDetection
 
     // report --PreDraftRankingMovement
     // report --MockMarketDelta --days 6

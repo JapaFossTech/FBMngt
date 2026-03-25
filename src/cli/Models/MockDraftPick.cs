@@ -9,6 +9,7 @@ public sealed class MockDraftPick : IPlayer
     public string? Team { get; set; }
 
     public string? Position { get; set; }
+    public int? DraftID { get; set; }
 
     public int PickNumber { get; init; }
 

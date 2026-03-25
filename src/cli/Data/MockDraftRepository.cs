@@ -113,6 +113,7 @@ public class MockDraftRepository : IMockDraftRepository
 
         string sql = @"
         SELECT
+            DraftID,
             PlayerName,
             PickNumber,
             [Round],
@@ -144,10 +145,11 @@ public class MockDraftRepository : IMockDraftRepository
         {
             var pick = new MockDraftPick
             {
-                PlayerName = reader.GetString(0),
-                PickNumber = reader.GetInt32(1),
-                RoundNumber = reader.GetInt32(2),
-                DraftDate = reader.GetDateTime(3)
+                DraftID = reader.GetInt32(0),
+                PlayerName = reader.GetString(1),
+                PickNumber = reader.GetInt32(2),
+                RoundNumber = reader.GetInt32(3),
+                DraftDate = reader.GetDateTime(4)
             };
 
             results.Add(pick);

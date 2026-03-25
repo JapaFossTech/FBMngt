@@ -81,7 +81,8 @@ public class ResolvePlayerIDAsyncTests
                 fanProsDeltaReport,
                 preDraftRankingMovementReport: null!,
                 mockMarketDeltaReport: null!,
-                positionDraftDistributionReport: null!
+                positionDraftDistributionReport: null!,
+                positionRunDetectionReport: null!
                 );
     }
 

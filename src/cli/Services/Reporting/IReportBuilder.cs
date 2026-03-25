@@ -5,6 +5,7 @@ using FBMngt.Services.Reporting.MockDrafts;
 using FBMngt.Services.Reporting.ZScore;
 using static FBMngt.Services.Reporting.MockDrafts.MockMarketDeltaReport;
 using static FBMngt.Services.Reporting.MockDrafts.PositionDraftDistributionReport;
+using static FBMngt.Services.Reporting.MockDrafts.PositionRunDetectionReport;
 
 namespace FBMngt.Services.Reporting;
 
@@ -161,6 +162,29 @@ public sealed class PositionDraftDistributionReportBuilder
     {
         ReportResult<PositionDraftDistributionRow> result =
             await _positionDraftDistributionReport.GenerateAsync(6);
+
+        return new ReportResult<object>
+        {
+            ReportRows = new List<object>(),
+            StringLines = result.StringLines
+        };
+    }
+}
+public sealed class PositionRunDetectionReportBuilder
+                                : IReportBuilder
+{
+    private readonly PositionRunDetectionReport
+                                        _positionRunDetectionReport;
+
+    public PositionRunDetectionReportBuilder
+        (PositionRunDetectionReport positionRunDetectionReport)
+    {
+        _positionRunDetectionReport = positionRunDetectionReport;
+    }
+    public async Task<ReportResult<object>> GenerateAsync()
+    {
+        ReportResult<PositionRunDetectionRow> result =
+            await _positionRunDetectionReport.GenerateAsync(6);
 
         return new ReportResult<object>
         {

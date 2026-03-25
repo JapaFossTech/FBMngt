@@ -22,6 +22,8 @@ public class ReportService
                             _mockMarketDeltaReport;
     private readonly PositionDraftDistributionReport
                             _positionDraftDistributionReport;
+    private readonly PositionRunDetectionReport
+                            _positionRunDetectionReport;
 
 
     // Ctor
@@ -34,7 +36,10 @@ public class ReportService
             PreDraftRankingMovementReport 
                             preDraftRankingMovementReport,
             MockMarketDeltaReport mockMarketDeltaReport,
-            PositionDraftDistributionReport positionDraftDistributionReport
+            PositionDraftDistributionReport 
+                                    positionDraftDistributionReport,
+            PositionRunDetectionReport
+                                    positionRunDetectionReport
         )
     {
         _configSettings = configSettings;
@@ -45,7 +50,10 @@ public class ReportService
         _preDraftRankingMovementReport = 
                               preDraftRankingMovementReport;
         _mockMarketDeltaReport = mockMarketDeltaReport;
-        _positionDraftDistributionReport = positionDraftDistributionReport;
+        _positionDraftDistributionReport = 
+                                positionDraftDistributionReport;
+        _positionRunDetectionReport =
+                                positionRunDetectionReport;
     }
     // ZScoreReports
     public async Task GenerateZScoreReportsAsync()
@@ -168,6 +176,11 @@ public class ReportService
                     builders.Add(
                         new PositionDraftDistributionReportBuilder(
                             _positionDraftDistributionReport));
+                    break;
+                case "positionrundetection":
+                    builders.Add(
+                        new PositionRunDetectionReportBuilder(
+                            _positionRunDetectionReport));
                     break;
 
                 default:

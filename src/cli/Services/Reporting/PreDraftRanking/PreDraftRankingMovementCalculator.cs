@@ -114,7 +114,7 @@ public class PreDraftRankingMovementCalculator
             movementRows.Add(new PreDraftMovementRow
             {
                 PlayerID = targetPlayerId,
-                PlayerName = targetPlayer.PlayerName,
+                PlayerName = targetPlayer.PlayerName!,
                 CurrentRank = playerIndexFromSimulation + 1,
                 TargetRank = safeTargetIndex + 1,
                 Movement = movement
