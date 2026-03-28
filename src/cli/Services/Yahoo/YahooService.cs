@@ -96,9 +96,44 @@ public class YahooService
             new AuthenticationHeaderValue("Bearer",
                                         newAccessToken);
         string url = "https://fantasysports.yahooapis.com/fantasy/v2/users;use_login=1/games?format=json";
-        var gameKey = "469"; // 2026 Baseball
-        url = $"https://fantasysports.yahooapis.com/fantasy/v2/users;use_login=1/games;game_keys={gameKey}/leagues?format=json";
-        Console.WriteLine(url);
+        string seasonKey = "469"; // 2026 Baseball season
+        string leagueKey = "469.l.7042"; // Kantuta_2026
+        string playerKey = "469.p.9097"; // Gary Sánchez
+        string teamKey = "469.l.7042.t.8";
+        url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
+            $"/users;use_login=1/games;game_keys={seasonKey}" +
+            $"/leagues?format=json";
+        //teams
+        url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
+            $"/league/469.l.7042/teams?format=json";
+        //team's roster
+        url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
+            $"/team/469.l.7042.t.1/roster?format=json";
+        //league setting
+        url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
+            $"/league/{leagueKey}/settings?format=json";
+        //league standings
+        url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
+            $"/league/{leagueKey}/standings?format=json";
+        //league scoreboard
+        url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
+            $"/league/{leagueKey}/scoreboard?format=json";
+        //league players
+        url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
+            $"/league/{leagueKey}/players;start=25;count=50?format=json";
+        //league player's Stats
+        url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
+            $"/league/{leagueKey}/players;player_keys={playerKey}" +
+            $"/stats?format=json"; Console.WriteLine(url);
+        //league transactions
+        url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
+            $"/league/{leagueKey}/transactions?format=json";
+        //league draft result
+        url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
+            $"/league/{leagueKey}/draftresults?format=json";
+        //league draft result
+        url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
+            $"/team/{teamKey}?format=json";
 
         var response = await http.GetAsync(url);
 
@@ -115,13 +150,24 @@ public class YahooService
 
         // Print everything
         Console.WriteLine(content);
-        //// Save to file if too big
-        //string yahooPath = Path.Combine(
-        //                AppSettings.ReportPath,
-        //                $"yahoo_leagues.json");
-        //System.IO.File.WriteAllText(yahooPath, content);
-        //Console.WriteLine(
-        //    "Full JSON saved to yahoo_raw.json");
+        // Save to file if too big
+        string reportID = "leagues";
+        reportID = "469.l.7042_teams";
+        reportID = "469.l.7042.t.1_roster";
+        reportID = leagueKey + "_leagueSetting";
+        reportID = leagueKey + "_leagueStanding";
+        reportID = leagueKey + "_leagueScoreboard";
+        reportID = leagueKey + "_players";
+        reportID = leagueKey + "_playerStats";
+        reportID = leagueKey + "_leagueTransactions";
+        reportID = leagueKey + "_leagueDraftResult";
+        reportID = teamKey + "_team";
+        string yahooPath = Path.Combine(
+                        AppSettings.ReportPath,
+                        $@"yahoo\yahoo_{reportID}.json");
+        System.IO.File.WriteAllText(yahooPath, content);
+        Console.WriteLine(
+            "Full JSON saved to yahoo_leagues.json");
 
         //var root = JsonDocument.Parse(content).RootElement;
 
