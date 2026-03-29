@@ -181,9 +181,11 @@ public class YahooService
                         AppSettings.ReportPath,
                         $@"yahoo\yahoo_{reportID}.json");
 
-        var teams = YahooTeamReader.ReadTeamsFromFile(yahooPath);
+        var league = YahooTeamReader.ReadLeagueFromFile(yahooPath);
 
-        foreach (var team in teams)
+        Console.WriteLine($"{league.LeagueKey} | {league.Name}");
+
+        foreach (var team in league.Teams)
         {
             Console.WriteLine($"{team.TeamKey} | {team.Name}");
         }
