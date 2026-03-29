@@ -10,6 +10,7 @@ namespace FBMngt.Services.Yahoo;
 
 public class YahooService
 {
+    private readonly YahooApiClient _apiClient;
     private readonly ConfigSettings _configSettings;
     private IAppSettings AppSettings { get 
                                     => _configSettings.AppSettings; }
@@ -17,6 +18,8 @@ public class YahooService
     public YahooService(ConfigSettings configSettings)
     {
         _configSettings = configSettings;
+
+        _apiClient = new YahooApiClient(configSettings.AppSettings);
     }
 
     public Task DisplayLoginUri()
@@ -69,7 +72,8 @@ public class YahooService
         Console.WriteLine(tokenResponse.RefreshToken);
     }
 
-    public async Task PersistInJsonFileAsync()
+    #region PersistInJsonFileAsync()
+    public async Task PersistInJsonFileAsync_old()
     {
         var http = new HttpClient();
 
@@ -174,7 +178,82 @@ public class YahooService
 
         
     }
+    private async Task<string> GetLeaguesJsonAsync(string seasonKey)
+    {
+        string url =
+            "https://fantasysports.yahooapis.com/fantasy/v2" +
+            $"/users;use_login=1/games;game_keys={seasonKey}" +
+            "/leagues?format=json";
 
+        return await _apiClient.GetAsync(url);
+    }
+    private async Task<string> GetTeamsJsonAsync(string leagueKey)
+    {
+        string url =
+            "https://fantasysports.yahooapis.com/fantasy/v2" +
+            $"/league/{leagueKey}/teams?format=json";
+
+        return await _apiClient.GetAsync(url);
+    }
+    private async Task<string> GetRosterJsonAsync(string teamKey)
+    {
+        string url =
+            "https://fantasysports.yahooapis.com/fantasy/v2" +
+            $"/team/{teamKey}/roster?format=json";
+
+        return await _apiClient.GetAsync(url);
+    }
+    private void SaveToFile(string reportId, string content)
+    {
+        string yahooPath = Path.Combine(
+            AppSettings.ReportPath,
+            $@"yahoo\yahoo_{reportId}.json");
+
+        File.WriteAllText(yahooPath, content);
+
+        Console.WriteLine($"[INFO] Saved: {reportId}");
+    }
+    public async Task PersistInJsonFileAsync()
+    {
+        // STEP 1: Get season (game) data
+        string seasonKey = "469"; // TODO: resolve dynamically
+
+        Console.WriteLine($"[INFO] SeasonKey: {seasonKey}");
+
+        // STEP 2: Get leagues for season
+        var leaguesJson = await GetLeaguesJsonAsync(seasonKey);
+
+        SaveToFile($"season_{seasonKey}_leagues", leaguesJson);
+
+        // TODO: parse league keys from JSON (next step)
+        // For now, keep using known league key
+        string leagueKey = "469.l.7042";
+
+        Console.WriteLine($"[INFO] LeagueKey: {leagueKey}");
+
+        // STEP 3: Get teams for league
+        var teamsJson = await GetTeamsJsonAsync(leagueKey);
+
+        SaveToFile($"{leagueKey}_teams", teamsJson);
+
+        // STEP 4: Get rosters (example: first 3 teams only)
+        var teamKeys = new List<string>
+    {
+        $"{leagueKey}.t.1",
+        $"{leagueKey}.t.2",
+        $"{leagueKey}.t.3"
+    };
+
+        foreach (var teamKey in teamKeys)
+        {
+            var rosterJson = await GetRosterJsonAsync(teamKey);
+
+            SaveToFile($"{teamKey}_roster", rosterJson);
+        }
+
+        Console.WriteLine("[INFO] Persist completed.");
+    }
+    #endregion
     public Task PersistStaticAsync()
     {
         //reading from json file
