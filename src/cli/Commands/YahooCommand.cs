@@ -23,7 +23,19 @@ public class YahooCommand
             await _yahooService.GetAccessToken();
             return;
         }
+        if (args.Contains("--persistStatic"))
+        {
+            await _yahooService.PersistStaticAsync();
+            return;
+        }
 
-        await _yahooService.RunAsync();
+        if (args.Contains("--persistInJsonFile"))
+        {
+            await _yahooService.PersistInJsonFileAsync();
+        }
     }
 }
+
+// yahoo [--showLoginUri] [--getAccessToken]
+// yahoo --persistInJsonFile
+// yahoo --persistStatic

@@ -2,7 +2,7 @@
   "profiles": {
     "FBMngt": {
       "commandName": "Project",
-      "commandLineArgs": "yahoo"
+      "commandLineArgs": "yahoo --persistStatic"
     }
   }
 }

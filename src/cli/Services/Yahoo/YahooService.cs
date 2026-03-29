@@ -68,7 +68,7 @@ public class YahooService
         Console.WriteLine(tokenResponse.RefreshToken);
     }
 
-    internal async Task RunAsync()
+    public async Task PersistInJsonFileAsync()
     {
         var http = new HttpClient();
 
@@ -152,8 +152,8 @@ public class YahooService
         Console.WriteLine(content);
         // Save to file if too big
         string reportID = "leagues";
-        reportID = "469.l.7042_teams";
-        reportID = "469.l.7042.t.1_roster";
+        reportID = leagueKey + "_teams";
+        reportID = leagueKey + ".t.1_roster";
         reportID = leagueKey + "_leagueSetting";
         reportID = leagueKey + "_leagueStanding";
         reportID = leagueKey + "_leagueScoreboard";
@@ -165,40 +165,29 @@ public class YahooService
         string yahooPath = Path.Combine(
                         AppSettings.ReportPath,
                         $@"yahoo\yahoo_{reportID}.json");
-        System.IO.File.WriteAllText(yahooPath, content);
+        //System.IO.File.WriteAllText(yahooPath, content);
         Console.WriteLine(
             "Full JSON saved to yahoo_leagues.json");
 
-        //var root = JsonDocument.Parse(content).RootElement;
+        
+    }
 
-        //var users = root.GetProperty("fantasy_content").GetProperty("users").GetProperty("0");
-        //var gamesContainer = users.GetProperty("user")[1].GetProperty("games");
+    public Task PersistStaticAsync()
+    {
+        //reading from json file
+        string leagueKey = "469.l.7042"; // Kantuta_2026
+        string reportID = leagueKey + "_teams";
+        string yahooPath = Path.Combine(
+                        AppSettings.ReportPath,
+                        $@"yahoo\yahoo_{reportID}.json");
 
-        //foreach (var gameKey in gamesContainer.EnumerateObject())
-        //{
-        //    // Skip keys that aren't game objects (like "count")
-        //    if (!gameKey.Value.TryGetProperty("game", out var gameArray))
-        //        continue;
+        var teams = YahooTeamReader.ReadTeamsFromFile(yahooPath);
 
-        //    var game = gameArray[0];
+        foreach (var team in teams)
+        {
+            Console.WriteLine($"{team.TeamKey} | {team.Name}");
+        }
 
-        //    if (game.TryGetProperty("season", out var seasonElem) && seasonElem.GetString() == "2026")
-        //    {
-        //        Console.WriteLine("Game: " + game.GetProperty("name").GetString());
-
-        //        if (game.TryGetProperty("leagues", out var leagues))
-        //        {
-        //            foreach (var leagueKey in leagues.EnumerateObject())
-        //            {
-        //                var league = leagueKey.Value.GetProperty("league")[0];
-        //                Console.WriteLine("League: " + league.GetProperty("name").GetString());
-        //            }
-        //        }
-        //        else
-        //        {
-        //            Console.WriteLine("No leagues yet for this season.");
-        //        }
-        //    }
-        //}
+        return Task.CompletedTask;
     }
 }
