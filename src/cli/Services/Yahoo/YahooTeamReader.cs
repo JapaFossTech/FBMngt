@@ -13,10 +13,10 @@ public static class YahooTeamReader
         var root = document.RootElement;
 
         JsonElement fantasyContent = root.GetProperty(
-                                                "fantasy_content");
+            "fantasy_content");
 
         JsonElement leagueArray = fantasyContent.GetProperty(
-                                                "league");
+            "league");
 
         JsonElement leagueMetadata = default;
         JsonElement teamsNode = default;
@@ -26,30 +26,49 @@ public static class YahooTeamReader
             if (item.ValueKind != JsonValueKind.Object)
                 continue;
 
-            // metadata
+            // Identify metadata
             if (item.TryGetProperty("league_key", out _))
             {
                 leagueMetadata = item;
             }
 
-            // teams
+            // Identify teams
             if (item.TryGetProperty("teams", out var t))
             {
                 teamsNode = t;
             }
         }
 
+        // 🚨 Hard validation (fail fast)
+        if (leagueMetadata.ValueKind == JsonValueKind.Undefined)
+        {
+            throw new Exception(
+                "League metadata not found in JSON.");
+        }
+
         var league = YahooLeagueMapper.Map(leagueMetadata);
 
-        if (teamsNode.ValueKind != JsonValueKind.Undefined)
+        if (teamsNode.ValueKind == JsonValueKind.Undefined)
         {
-            var teamNodes = YahooTeamExtractor.GetTeamNodes(
-                                                        teamsNode);
-
-            league.Teams = teamNodes
-                .Select(YahooTeamMapper.Map)
-                .ToList();
+            Console.WriteLine(
+                "[WARN] Teams node not found.");
+            return league;
         }
+
+        var teamNodes = YahooTeamExtractor.GetTeamNodes(
+            teamsNode);
+
+        league.Teams = teamNodes
+            .Select(YahooTeamMapper.Map)
+            .ToList();
+
+        // 🔍 Summary output
+        Console.WriteLine(
+            $"[INFO] League: {league.LeagueKey} | " +
+            $"{league.Name}");
+
+        Console.WriteLine(
+            $"[INFO] Teams loaded: {league.Teams.Count}");
 
         return league;
     }

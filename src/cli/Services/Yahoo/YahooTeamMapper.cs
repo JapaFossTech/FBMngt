@@ -7,7 +7,7 @@ public static class YahooTeamMapper
 {
     public static FBTeam Map(JsonElement teamNode)
     {
-        return new FBTeam
+        var team = new FBTeam
         {
             TeamKey = YahooJsonNavigator.GetString(
                 teamNode, "team_key"),
@@ -15,5 +15,21 @@ public static class YahooTeamMapper
             Name = YahooJsonNavigator.GetString(
                 teamNode, "name")
         };
+
+        // 🔍 Validation (basic, explicit)
+        if (string.IsNullOrWhiteSpace(team.TeamKey))
+        {
+            Console.WriteLine(
+                "[WARN] Missing TeamKey in teamNode");
+        }
+
+        if (string.IsNullOrWhiteSpace(team.Name))
+        {
+            Console.WriteLine(
+                $"[WARN] Missing Name for TeamKey: " +
+                $"{team.TeamKey}");
+        }
+
+        return team;
     }
 }

@@ -11,7 +11,8 @@ namespace FBMngt.Services.Yahoo;
 public class YahooService
 {
     private readonly ConfigSettings _configSettings;
-    private IAppSettings AppSettings { get => _configSettings.AppSettings; }
+    private IAppSettings AppSettings { get 
+                                    => _configSettings.AppSettings; }
     //Ctor
     public YahooService(ConfigSettings configSettings)
     {
@@ -75,7 +76,8 @@ public class YahooService
         var tokenResponse = await http.RequestRefreshTokenAsync(
             new RefreshTokenRequest
             {
-                Address = "https://api.login.yahoo.com/oauth2/get_token",
+                Address = "https://api.login.yahoo.com/oauth2" +
+                                                        "/get_token",
                 ClientId = AppSettings.Yahoo_ClientId,
                 ClientSecret = AppSettings.Yahoo_ClientSecret,
                 RefreshToken = AppSettings.Yahoo_RefreshToken
@@ -95,7 +97,8 @@ public class YahooService
         http.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer",
                                         newAccessToken);
-        string url = "https://fantasysports.yahooapis.com/fantasy/v2/users;use_login=1/games?format=json";
+        string url = "https://fantasysports.yahooapis.com/fantasy/v2" +
+            "/users;use_login=1/games?format=json";
         string seasonKey = "469"; // 2026 Baseball season
         string leagueKey = "469.l.7042"; // Kantuta_2026
         string playerKey = "469.p.9097"; // Gary Sánchez
