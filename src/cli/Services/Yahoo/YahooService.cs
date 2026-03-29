@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace FBMngt.Services.Yahoo;
@@ -138,7 +139,7 @@ public class YahooService
         //league draft result
         url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
             $"/league/{leagueKey}/draftresults?format=json";
-        //league draft result
+        //team
         url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
             $"/team/{teamKey}?format=json";
 
@@ -213,46 +214,189 @@ public class YahooService
 
         Console.WriteLine($"[INFO] Saved: {reportId}");
     }
+    private List<string> ExtractLeagueKeys(string json)
+    {
+        using var doc = JsonDocument.Parse(json);
+
+        var root = doc.RootElement;
+
+        var fantasyContent = root.GetProperty("fantasy_content");
+
+        var users = fantasyContent.GetProperty("users");
+
+        var userWrapper = users.GetProperty("0");
+
+        var userArray = userWrapper.GetProperty("user");
+
+        JsonElement leaguesNode = default;
+
+        foreach (var item in userArray.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object)
+                continue;
+
+            if (item.TryGetProperty("games", out var games))
+            {
+                var gameWrapper = games.GetProperty("0");
+                var gameArray = gameWrapper.GetProperty("game");
+
+                foreach (var gameItem in gameArray.EnumerateArray())
+                {
+                    if (gameItem.TryGetProperty("leagues",
+                        out var leagues))
+                    {
+                        leaguesNode = leagues;
+                    }
+                }
+            }
+        }
+
+        var result = new List<string>();
+
+        if (leaguesNode.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var leagueWrapper in YahooJsonHelper
+                .GetYahooCollection(leaguesNode))
+            {
+                if (!leagueWrapper.TryGetProperty("league",
+                    out var leagueArray))
+                    continue;
+
+                if (leagueArray.ValueKind != JsonValueKind.Array
+                    || leagueArray.GetArrayLength() == 0)
+                    continue;
+
+                var leagueData = leagueArray[0];
+
+                var leagueKey = YahooJsonNavigator.GetString(
+                    leagueData, "league_key");
+
+                if (!string.IsNullOrWhiteSpace(leagueKey))
+                    result.Add(leagueKey);
+            }
+        }
+
+        return result;
+    }
+    private List<string> ExtractTeamKeysFromTeamsJson(string json)
+    {
+        // Save temp file to reuse existing reader
+        string tempPath = Path.GetTempFileName();
+
+        File.WriteAllText(tempPath, json);
+
+        var league = YahooTeamReader.ReadLeagueFromFile(tempPath);
+
+        return league.Teams
+            .Where(t => !string.IsNullOrWhiteSpace(t.TeamKey))
+            .Select(t => t.TeamKey!)
+            .ToList();
+    }
+    private async Task<string> GetSeasonKeyAsync()
+    {
+        string url =
+            "https://fantasysports.yahooapis.com/fantasy/v2" +
+            "/users;use_login=1/games?format=json";
+
+        var json = await _apiClient.GetAsync(url);
+
+        using var doc = JsonDocument.Parse(json);
+
+        var root = doc.RootElement;
+
+        var fantasyContent = root.GetProperty("fantasy_content");
+
+        var users = fantasyContent.GetProperty("users");
+
+        var userWrapper = users.GetProperty("0");
+
+        var userArray = userWrapper.GetProperty("user");
+
+        string currentYear = DateTime.Now.Year.ToString();
+
+        foreach (var item in userArray.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object)
+                continue;
+
+            if (!item.TryGetProperty("games", out var games))
+                continue;
+
+            // ✅ FIX: iterate ALL games (not just "0")
+            foreach (var gameWrapper in YahooJsonHelper
+                .GetYahooCollection(games))
+            {
+                if (!gameWrapper.TryGetProperty("game",
+                    out var gameArray))
+                    continue;
+
+                if (gameArray.ValueKind != JsonValueKind.Array
+                    || gameArray.GetArrayLength() == 0)
+                    continue;
+
+                var game = gameArray[0];
+
+                var code = YahooJsonNavigator.GetString(
+                    game, "code");
+
+                if (code != "mlb")
+                    continue;
+
+                var season = YahooJsonNavigator.GetString(
+                    game, "season");
+
+                if (season != currentYear)
+                    continue;
+
+                var seasonKey = YahooJsonNavigator.GetString(
+                    game, "game_key");
+
+                if (!string.IsNullOrWhiteSpace(seasonKey))
+                    return seasonKey;
+            }
+        }
+
+        throw new Exception(
+            $"MLB season key not found for year {currentYear}");
+    }
     public async Task PersistInJsonFileAsync()
     {
-        // STEP 1: Get season (game) data
-        string seasonKey = "469"; // TODO: resolve dynamically
+        // STEP 1: Resolve season key dynamically
+        string seasonKey = await GetSeasonKeyAsync();
 
         Console.WriteLine($"[INFO] SeasonKey: {seasonKey}");
 
-        // STEP 2: Get leagues for season
+        // STEP 2: Get leagues JSON
         var leaguesJson = await GetLeaguesJsonAsync(seasonKey);
 
         SaveToFile($"season_{seasonKey}_leagues", leaguesJson);
 
-        // TODO: parse league keys from JSON (next step)
-        // For now, keep using known league key
-        string leagueKey = "469.l.7042";
+        // STEP 3: Extract league keys from JSON file
+        var leagueKeys = ExtractLeagueKeys(leaguesJson);
 
-        Console.WriteLine($"[INFO] LeagueKey: {leagueKey}");
-
-        // STEP 3: Get teams for league
-        var teamsJson = await GetTeamsJsonAsync(leagueKey);
-
-        SaveToFile($"{leagueKey}_teams", teamsJson);
-
-        // STEP 4: Get rosters (example: first 3 teams only)
-        var teamKeys = new List<string>
-    {
-        $"{leagueKey}.t.1",
-        $"{leagueKey}.t.2",
-        $"{leagueKey}.t.3"
-    };
-
-        foreach (var teamKey in teamKeys)
+        foreach (var leagueKey in leagueKeys)
         {
-            var rosterJson = await GetRosterJsonAsync(teamKey);
+            Console.WriteLine($"[INFO] LeagueKey: {leagueKey}");
 
-            SaveToFile($"{teamKey}_roster", rosterJson);
+            // STEP 4: Get teams JSON
+            var teamsJson = await GetTeamsJsonAsync(leagueKey);
+
+            SaveToFile($"{leagueKey}_teams", teamsJson);
+
+            // STEP 5: Extract team keys USING EXISTING READER
+            var teamKeys = ExtractTeamKeysFromTeamsJson(teamsJson);
+
+            // STEP 6: Get rosters (limit to first 3 for now)
+            foreach (var teamKey in teamKeys.Take(3))
+            {
+                var rosterJson = await GetRosterJsonAsync(teamKey);
+
+                SaveToFile($"{teamKey}_roster", rosterJson);
+            }
         }
 
         Console.WriteLine("[INFO] Persist completed.");
-    }
+    }    
     #endregion
     public Task PersistStaticAsync()
     {
