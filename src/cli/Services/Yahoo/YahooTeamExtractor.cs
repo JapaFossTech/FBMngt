@@ -2,29 +2,46 @@
 
 namespace FBMngt.Services.Yahoo;
 
+/// <summary>
+/// Extracts team nodes from Yahoo JSON structure
+/// </summary>
 public static class YahooTeamExtractor
 {
     public static IEnumerable<JsonElement> GetTeamNodes(
-                                            JsonElement teamsNode)
+        JsonElement teamsNode)
     {
-        foreach (JsonElement teamWrapper in YahooJsonHelper
-                                    .GetYahooCollection(teamsNode))
+        foreach (var teamWrapper in YahooJsonHelper
+            .GetYahooCollection(teamsNode))
         {
-            // each wrapper looks like: { "team": [ { ... } ] }
+            // Each wrapper:
+            // { "team": [ [ {...}, {...} ] ] }
 
             if (!teamWrapper.TryGetProperty("team", 
-                                            out JsonElement teamArray))
+                                            out var teamArray))
                 continue;
 
             if (teamArray.ValueKind != JsonValueKind.Array)
                 continue;
 
-            // Yahoo wraps actual object inside an array → take first element
             if (teamArray.GetArrayLength() == 0)
                 continue;
 
-            yield return teamArray[0];
+            var firstLevel = teamArray[0];
+
+            // 🔥 FIX: handle double array
+            if (firstLevel.ValueKind == JsonValueKind.Array)
+            {
+                if (firstLevel.GetArrayLength() == 0)
+                    continue;
+
+                // actual team data (array-of-objects)
+                yield return firstLevel;
+            }
+            else
+            {
+                // fallback (rare case)
+                yield return firstLevel;
+            }
         }
     }
-
 }
