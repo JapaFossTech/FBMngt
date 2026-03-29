@@ -179,6 +179,74 @@ public class YahooService
 
         
     }
+    private async Task<string> GetGamesJsonAsync()
+    {
+        string url =
+            "https://fantasysports.yahooapis.com/fantasy/v2" +
+            "/users;use_login=1/games?format=json";
+
+        return await _apiClient.GetAsync(url);
+    }
+    private string ExtractSeasonKey(string gamesJson)
+    {
+        using var doc = JsonDocument.Parse(gamesJson);
+
+        var root = doc.RootElement;
+
+        var fantasyContent = root.GetProperty("fantasy_content");
+
+        var users = fantasyContent.GetProperty("users");
+
+        var userWrapper = users.GetProperty("0");
+
+        var userArray = userWrapper.GetProperty("user");
+
+        string currentYear = DateTime.Now.Year.ToString();
+
+        foreach (var item in userArray.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object)
+                continue;
+
+            if (!item.TryGetProperty("games", out var games))
+                continue;
+
+            foreach (var gameWrapper in YahooJsonHelper
+                .GetYahooCollection(games))
+            {
+                if (!gameWrapper.TryGetProperty("game",
+                    out var gameArray))
+                    continue;
+
+                if (gameArray.ValueKind != JsonValueKind.Array
+                    || gameArray.GetArrayLength() == 0)
+                    continue;
+
+                var game = gameArray[0];
+
+                var code = YahooJsonNavigator.GetString(
+                    game, "code");
+
+                if (code != "mlb")
+                    continue;
+
+                var season = YahooJsonNavigator.GetString(
+                    game, "season");
+
+                if (season != currentYear)
+                    continue;
+
+                var seasonKey = YahooJsonNavigator.GetString(
+                    game, "game_key");
+
+                if (!string.IsNullOrWhiteSpace(seasonKey))
+                    return seasonKey;
+            }
+        }
+
+        throw new Exception(
+            $"MLB season key not found for year {currentYear}");
+    }
     private async Task<string> GetLeaguesJsonAsync(string seasonKey)
     {
         string url =
@@ -201,6 +269,24 @@ public class YahooService
         string url =
             "https://fantasysports.yahooapis.com/fantasy/v2" +
             $"/team/{teamKey}/roster?format=json";
+
+        return await _apiClient.GetAsync(url);
+    }
+    private async Task<string> GetLeagueSettingsJsonAsync(
+                                                string leagueKey)
+    {
+        string url =
+            "https://fantasysports.yahooapis.com/fantasy/v2" +
+            $"/league/{leagueKey}/settings?format=json";
+
+        return await _apiClient.GetAsync(url);
+    }
+    private async Task<string> GetLeagueDraftResultsJsonAsync(
+                                                    string leagueKey)
+    {
+        string url =
+            "https://fantasysports.yahooapis.com/fantasy/v2" +
+            $"/league/{leagueKey}/draftresults?format=json";
 
         return await _apiClient.GetAsync(url);
     }
@@ -361,42 +447,49 @@ public class YahooService
     }
     public async Task PersistInJsonFileAsync()
     {
-        // STEP 1: Resolve season key dynamically
-        string seasonKey = await GetSeasonKeyAsync();
+        // STEP 1: Get ALL seasons (games)
+        var seasonsJson = await GetGamesJsonAsync();
+
+        SaveToFile("seasons", seasonsJson);
+
+        // STEP 2: Resolve current season key
+        string seasonKey = ExtractSeasonKey(seasonsJson);
 
         Console.WriteLine($"[INFO] SeasonKey: {seasonKey}");
 
-        // STEP 2: Get leagues JSON
+        // STEP 3: Get leagues
         var leaguesJson = await GetLeaguesJsonAsync(seasonKey);
 
         SaveToFile($"season_{seasonKey}_leagues", leaguesJson);
 
-        // STEP 3: Extract league keys from JSON file
+        // STEP 4: Extract league keys
         var leagueKeys = ExtractLeagueKeys(leaguesJson);
 
         foreach (var leagueKey in leagueKeys)
         {
             Console.WriteLine($"[INFO] LeagueKey: {leagueKey}");
 
-            // STEP 4: Get teams JSON
+            // STEP 5: Teams
             var teamsJson = await GetTeamsJsonAsync(leagueKey);
 
             SaveToFile($"{leagueKey}_teams", teamsJson);
 
-            // STEP 5: Extract team keys USING EXISTING READER
-            var teamKeys = ExtractTeamKeysFromTeamsJson(teamsJson);
+            // STEP 6: League Settings
+            var settingsJson = await GetLeagueSettingsJsonAsync(
+                leagueKey);
 
-            // STEP 6: Get rosters (limit to first 3 for now)
-            foreach (var teamKey in teamKeys.Take(3))
-            {
-                var rosterJson = await GetRosterJsonAsync(teamKey);
+            SaveToFile($"{leagueKey}_settings", settingsJson);
 
-                SaveToFile($"{teamKey}_roster", rosterJson);
-            }
+            // STEP 7: Draft Results
+            var draftJson = await GetLeagueDraftResultsJsonAsync(
+                leagueKey);
+
+            SaveToFile($"{leagueKey}_draftresults", draftJson);
         }
 
-        Console.WriteLine("[INFO] Persist completed.");
+        Console.WriteLine("[INFO] Static persist completed.");
     }    
+    
     #endregion
     public Task PersistStaticAsync()
     {
