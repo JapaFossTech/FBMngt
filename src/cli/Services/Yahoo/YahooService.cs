@@ -16,11 +16,11 @@ public class YahooService
     private IAppSettings AppSettings { get 
                                     => _configSettings.AppSettings; }
     //Ctor
-    public YahooService(ConfigSettings configSettings)
+    public YahooService(YahooApiClient apiClient,
+                        ConfigSettings configSettings)
     {
+        _apiClient = apiClient;
         _configSettings = configSettings;
-
-        _apiClient = new YahooApiClient(configSettings.AppSettings);
     }
 
     public Task DisplayLoginUri()
@@ -39,146 +39,146 @@ public class YahooService
         return Task.CompletedTask;
     }
 
-    public async Task GetAccessToken()
-    {
-        Console.Write("Paste the code: ");
-        var code = Console.ReadLine();
-        if (string.IsNullOrEmpty(code))
-            throw new Exception("Invalid code!");
+    //public async Task GetAccessToken()
+    //{
+    //    Console.Write("Paste the code: ");
+    //    var code = Console.ReadLine();
+    //    if (string.IsNullOrEmpty(code))
+    //        throw new Exception("Invalid code!");
 
-        var http = new HttpClient();
+    //    //var http = new HttpClient();
 
-        var tokenResponse = await http.RequestAuthorizationCodeTokenAsync(
-            new AuthorizationCodeTokenRequest
-            {
-                Address = "https://api.login.yahoo.com/oauth2/get_token",
-                ClientId = AppSettings.Yahoo_ClientId,
-                ClientSecret = AppSettings.Yahoo_ClientSecret,
-                Code = code,
-                RedirectUri = AppSettings.Yahoo_RedirectUri
-            });
+    //    var tokenResponse = await http.RequestAuthorizationCodeTokenAsync(
+    //        new AuthorizationCodeTokenRequest
+    //        {
+    //            Address = "https://api.login.yahoo.com/oauth2/get_token",
+    //            ClientId = AppSettings.Yahoo_ClientId,
+    //            ClientSecret = AppSettings.Yahoo_ClientSecret,
+    //            Code = code,
+    //            RedirectUri = AppSettings.Yahoo_RedirectUri
+    //        });
 
-        if (tokenResponse.IsError)
-        {
-            Console.WriteLine("ERROR:");
-            Console.WriteLine(tokenResponse.Error);
-            return;
-        }
+    //    if (tokenResponse.IsError)
+    //    {
+    //        Console.WriteLine("ERROR:");
+    //        Console.WriteLine(tokenResponse.Error);
+    //        return;
+    //    }
 
-        Console.WriteLine();
-        Console.WriteLine("ACCESS TOKEN:");
-        Console.WriteLine(tokenResponse.AccessToken);
-        Console.WriteLine();
-        Console.WriteLine("REFRESH TOKEN:");
-        Console.WriteLine(tokenResponse.RefreshToken);
-    }
+    //    Console.WriteLine();
+    //    Console.WriteLine("ACCESS TOKEN:");
+    //    Console.WriteLine(tokenResponse.AccessToken);
+    //    Console.WriteLine();
+    //    Console.WriteLine("REFRESH TOKEN:");
+    //    Console.WriteLine(tokenResponse.RefreshToken);
+    //}
 
     #region PersistInJsonFileAsync()
-    public async Task PersistInJsonFileAsync_old()
-    {
-        var http = new HttpClient();
+    //public async Task PersistInJsonFileAsync_old()
+    //{
+    //    var http = new HttpClient();
 
-        var tokenResponse = await http.RequestRefreshTokenAsync(
-            new RefreshTokenRequest
-            {
-                Address = "https://api.login.yahoo.com/oauth2" +
-                                                        "/get_token",
-                ClientId = AppSettings.Yahoo_ClientId,
-                ClientSecret = AppSettings.Yahoo_ClientSecret,
-                RefreshToken = AppSettings.Yahoo_RefreshToken
-            });
+    //    var tokenResponse = await http.RequestRefreshTokenAsync(
+    //        new RefreshTokenRequest
+    //        {
+    //            Address = "https://api.login.yahoo.com/oauth2" +
+    //                                                    "/get_token",
+    //            ClientId = AppSettings.Yahoo_ClientId,
+    //            ClientSecret = AppSettings.Yahoo_ClientSecret,
+    //            RefreshToken = AppSettings.Yahoo_RefreshToken
+    //        });
 
-        if (tokenResponse.IsError)
-        {
-            Console.WriteLine("Error refreshing token:");
-            Console.WriteLine(tokenResponse.Error);
-            return;
-        }
+    //    if (tokenResponse.IsError)
+    //    {
+    //        Console.WriteLine("Error refreshing token:");
+    //        Console.WriteLine(tokenResponse.Error);
+    //        return;
+    //    }
 
-        var newAccessToken = tokenResponse.AccessToken;
-        Console.WriteLine("New Access Token:");
-        Console.WriteLine(newAccessToken);
+    //    var newAccessToken = tokenResponse.AccessToken;
+    //    Console.WriteLine("New Access Token:");
+    //    Console.WriteLine(newAccessToken);
 
-        http.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer",
-                                        newAccessToken);
-        string url = "https://fantasysports.yahooapis.com/fantasy/v2" +
-            "/users;use_login=1/games?format=json";
-        string seasonKey = "469"; // 2026 Baseball season
-        string leagueKey = "469.l.7042"; // Kantuta_2026
-        string playerKey = "469.p.9097"; // Gary Sánchez
-        string teamKey = "469.l.7042.t.8";
-        url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
-            $"/users;use_login=1/games;game_keys={seasonKey}" +
-            $"/leagues?format=json";
-        //teams
-        url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
-            $"/league/469.l.7042/teams?format=json";
-        //team's roster
-        url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
-            $"/team/469.l.7042.t.1/roster?format=json";
-        //league setting
-        url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
-            $"/league/{leagueKey}/settings?format=json";
-        //league standings
-        url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
-            $"/league/{leagueKey}/standings?format=json";
-        //league scoreboard
-        url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
-            $"/league/{leagueKey}/scoreboard?format=json";
-        //league players
-        url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
-            $"/league/{leagueKey}/players;start=25;count=50?format=json";
-        //league player's Stats
-        url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
-            $"/league/{leagueKey}/players;player_keys={playerKey}" +
-            $"/stats?format=json"; Console.WriteLine(url);
-        //league transactions
-        url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
-            $"/league/{leagueKey}/transactions?format=json";
-        //league draft result
-        url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
-            $"/league/{leagueKey}/draftresults?format=json";
-        //team
-        url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
-            $"/team/{teamKey}?format=json";
+    //    http.DefaultRequestHeaders.Authorization =
+    //        new AuthenticationHeaderValue("Bearer",
+    //                                    newAccessToken);
+    //    string url = "https://fantasysports.yahooapis.com/fantasy/v2" +
+    //        "/users;use_login=1/games?format=json";
+    //    string seasonKey = "469"; // 2026 Baseball season
+    //    string leagueKey = "469.l.7042"; // Kantuta_2026
+    //    string playerKey = "469.p.9097"; // Gary Sánchez
+    //    string teamKey = "469.l.7042.t.8";
+    //    url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
+    //        $"/users;use_login=1/games;game_keys={seasonKey}" +
+    //        $"/leagues?format=json";
+    //    //teams
+    //    url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
+    //        $"/league/469.l.7042/teams?format=json";
+    //    //team's roster
+    //    url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
+    //        $"/team/469.l.7042.t.1/roster?format=json";
+    //    //league setting
+    //    url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
+    //        $"/league/{leagueKey}/settings?format=json";
+    //    //league standings
+    //    url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
+    //        $"/league/{leagueKey}/standings?format=json";
+    //    //league scoreboard
+    //    url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
+    //        $"/league/{leagueKey}/scoreboard?format=json";
+    //    //league players
+    //    url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
+    //        $"/league/{leagueKey}/players;start=25;count=50?format=json";
+    //    //league player's Stats
+    //    url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
+    //        $"/league/{leagueKey}/players;player_keys={playerKey}" +
+    //        $"/stats?format=json"; Console.WriteLine(url);
+    //    //league transactions
+    //    url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
+    //        $"/league/{leagueKey}/transactions?format=json";
+    //    //league draft result
+    //    url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
+    //        $"/league/{leagueKey}/draftresults?format=json";
+    //    //team
+    //    url = $"https://fantasysports.yahooapis.com/fantasy/v2" +
+    //        $"/team/{teamKey}?format=json";
 
-        var response = await http.GetAsync(url);
+    //    var response = await http.GetAsync(url);
 
-        if (!response.IsSuccessStatusCode)
-        {
-            Console.WriteLine("Error calling Yahoo API:");
-            Console.WriteLine(response.StatusCode);
-            var err = await response.Content.ReadAsStringAsync();
-            Console.WriteLine(err);
-            return;
-        }
+    //    if (!response.IsSuccessStatusCode)
+    //    {
+    //        Console.WriteLine("Error calling Yahoo API:");
+    //        Console.WriteLine(response.StatusCode);
+    //        var err = await response.Content.ReadAsStringAsync();
+    //        Console.WriteLine(err);
+    //        return;
+    //    }
 
-        var content = await response.Content.ReadAsStringAsync();
+    //    var content = await response.Content.ReadAsStringAsync();
 
-        // Print everything
-        Console.WriteLine(content);
-        // Save to file if too big
-        string reportID = "leagues";
-        reportID = leagueKey + "_teams";
-        reportID = leagueKey + ".t.1_roster";
-        reportID = leagueKey + "_leagueSetting";
-        reportID = leagueKey + "_leagueStanding";
-        reportID = leagueKey + "_leagueScoreboard";
-        reportID = leagueKey + "_players";
-        reportID = leagueKey + "_playerStats";
-        reportID = leagueKey + "_leagueTransactions";
-        reportID = leagueKey + "_leagueDraftResult";
-        reportID = teamKey + "_team";
-        string yahooPath = Path.Combine(
-                        AppSettings.ReportPath,
-                        $@"yahoo\yahoo_{reportID}.json");
-        //System.IO.File.WriteAllText(yahooPath, content);
-        Console.WriteLine(
-            "Full JSON saved to yahoo_leagues.json");
+    //    // Print everything
+    //    Console.WriteLine(content);
+    //    // Save to file if too big
+    //    string reportID = "leagues";
+    //    reportID = leagueKey + "_teams";
+    //    reportID = leagueKey + ".t.1_roster";
+    //    reportID = leagueKey + "_leagueSetting";
+    //    reportID = leagueKey + "_leagueStanding";
+    //    reportID = leagueKey + "_leagueScoreboard";
+    //    reportID = leagueKey + "_players";
+    //    reportID = leagueKey + "_playerStats";
+    //    reportID = leagueKey + "_leagueTransactions";
+    //    reportID = leagueKey + "_leagueDraftResult";
+    //    reportID = teamKey + "_team";
+    //    string yahooPath = Path.Combine(
+    //                    AppSettings.ReportPath,
+    //                    $@"yahoo\yahoo_{reportID}.json");
+    //    //System.IO.File.WriteAllText(yahooPath, content);
+    //    Console.WriteLine(
+    //        "Full JSON saved to yahoo_leagues.json");
 
         
-    }
+    //}
     private async Task<string> GetGamesJsonAsync()
     {
         string url =
@@ -300,7 +300,7 @@ public class YahooService
 
         Console.WriteLine($"[INFO] Saved: {reportId}");
     }
-    private List<string> ExtractLeagueKeys(string json)
+    internal List<string> ExtractLeagueKeys(string json)
     {
         using var doc = JsonDocument.Parse(json);
 
@@ -364,21 +364,62 @@ public class YahooService
 
         return result;
     }
-    private List<string> ExtractTeamKeysFromTeamsJson(string json)
+
+    // ------------------------------------------------------------
+    // Extract Team Keys from Teams JSON
+    // ------------------------------------------------------------
+    public List<string> ExtractTeamKeys(string json)
     {
-        // Save temp file to reuse existing reader
-        string tempPath = Path.GetTempFileName();
+        using var document = JsonDocument.Parse(json);
 
-        File.WriteAllText(tempPath, json);
+        var root = document.RootElement;
 
-        var league = YahooTeamReader.ReadLeagueFromFile(tempPath);
+        // Navigate: fantasy_content → league
+        var fantasyContent = root.GetProperty("fantasy_content");
+        var leagueArray = fantasyContent.GetProperty("league");
 
-        return league.Teams
-            .Where(t => !string.IsNullOrWhiteSpace(t.TeamKey))
-            .Select(t => t.TeamKey!)
-            .ToList();
+        // Yahoo pattern:
+        // [0] = league metadata
+        // [1] = teams
+        var leagueWithTeams = leagueArray[1];
+
+        var teamsNode = leagueWithTeams.GetProperty("teams");
+
+        var result = new List<string>();
+
+        // iterate "0", "1", ..., skip "count"
+        foreach (var teamEntry in teamsNode.EnumerateObject())
+        {
+            if (teamEntry.NameEquals("count"))
+                continue;
+
+            // team → [ [ {...}, {...} ] ]
+            var teamArray = teamEntry.Value.GetProperty("team");
+
+            // double array → take first inner array
+            var teamDataArray = teamArray[0];
+
+            foreach (var item in teamDataArray.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.Object)
+                    continue;
+
+                if (item.TryGetProperty("team_key",
+                                        out var teamKeyProp))
+                {
+                    var teamKey = teamKeyProp.GetString();
+
+                    if (!string.IsNullOrWhiteSpace(teamKey))
+                    {
+                        result.Add(teamKey);
+                    }
+                }
+            }
+        }
+
+        return result;
     }
-    private async Task<string> GetSeasonKeyAsync()
+    internal async Task<string> GetSeasonKeyAsync()
     {
         string url =
             "https://fantasysports.yahooapis.com/fantasy/v2" +

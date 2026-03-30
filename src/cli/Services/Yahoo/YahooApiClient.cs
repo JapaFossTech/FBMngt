@@ -3,67 +3,39 @@ using System.Net.Http.Headers;
 
 namespace FBMngt.Services.Yahoo;
 
-/// <summary>
-/// Responsible ONLY for:
-/// - Authentication (refresh token)
-/// - Executing HTTP GET requests
-/// </summary>
 public class YahooApiClient
 {
-    private readonly IAppSettings _appSettings;
+    private readonly HttpClient _http;
+    private readonly ConfigSettings _config;
 
-    // Ctor
-    public YahooApiClient(IAppSettings appSettings)
+    // Cached token (per execution)
+    private string? _accessToken;
+
+    public YahooApiClient(HttpClient http,
+                          ConfigSettings config)
     {
-        _appSettings = appSettings;
+        _http = http;
+        _config = config;
     }
 
-    /// <summary>
-    /// Gets a valid access token using refresh token
-    /// </summary>
-    public async Task<string> GetAccessTokenAsync()
-    {
-        var http = new HttpClient();
-
-        var tokenResponse = await http.RequestRefreshTokenAsync(
-            new RefreshTokenRequest
-            {
-                Address =
-                    "https://api.login.yahoo.com/oauth2/get_token",
-
-                ClientId = _appSettings.Yahoo_ClientId,
-                ClientSecret = _appSettings.Yahoo_ClientSecret,
-                RefreshToken = _appSettings.Yahoo_RefreshToken
-            });
-
-        if (tokenResponse.IsError)
-        {
-            Console.WriteLine("Error refreshing token:");
-            Console.WriteLine(tokenResponse.Error);
-            throw new Exception("Token refresh failed");
-        }
-
-        return tokenResponse.AccessToken!;
-    }
-
-    /// <summary>
-    /// Executes GET request and returns raw JSON
-    /// </summary>
     public async Task<string> GetAsync(string url)
     {
-        var accessToken = await GetAccessTokenAsync();
+        // Ensure we have a token (ONLY ONCE)
+        if (string.IsNullOrEmpty(_accessToken))
+        {
+            _accessToken = await GetAccessTokenAsync();
+        }
 
-        var http = new HttpClient();
+        _http.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue(
+                "Bearer",
+                _accessToken);
 
-        http.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer",
-                accessToken);
-
-        var response = await http.GetAsync(url);
+        var response = await _http.GetAsync(url);
 
         if (!response.IsSuccessStatusCode)
         {
-            Console.WriteLine("Error calling Yahoo API:");
+            Console.WriteLine("[ERROR] Yahoo API call failed");
             Console.WriteLine(response.StatusCode);
 
             var err = await response.Content.ReadAsStringAsync();
@@ -73,5 +45,34 @@ public class YahooApiClient
         }
 
         return await response.Content.ReadAsStringAsync();
+    }
+
+    private async Task<string> GetAccessTokenAsync()
+    {
+        Console.WriteLine("[INFO] Retrieving access token...");
+
+        var tokenResponse =
+            await _http.RequestRefreshTokenAsync(
+                new RefreshTokenRequest
+                {
+                    Address =
+                        "https://api.login.yahoo.com/oauth2/get_token",
+                    ClientId =
+                        _config.AppSettings.Yahoo_ClientId,
+                    ClientSecret =
+                        _config.AppSettings.Yahoo_ClientSecret,
+                    RefreshToken =
+                        _config.AppSettings.Yahoo_RefreshToken
+                });
+
+        if (tokenResponse.IsError)
+        {
+            Console.WriteLine("[ERROR] Failed to retrieve access token");
+            Console.WriteLine(tokenResponse.Raw);
+
+            throw new Exception("OAuth token request failed");
+        }
+
+        return tokenResponse.AccessToken!;
     }
 }

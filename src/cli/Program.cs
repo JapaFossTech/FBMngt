@@ -10,6 +10,7 @@ using FBMngt.Services.Reporting.FanPros;
 using FBMngt.Services.Reporting.MockDrafts;
 using FBMngt.Services.Reporting.PreDraftRanking;
 using FBMngt.Services.Yahoo;
+using FBMngt.Services.Yahoo.DailyIngest;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -31,6 +32,14 @@ class Program
             var appSettings = sp.GetRequiredService<IAppSettings>();
             return new ConfigSettings(appSettings);
         });
+
+        // HttpClient (shared, best practice)
+        services.AddHttpClient();
+
+        // Yahoo services
+        services.AddTransient<YahooApiClient>();
+        services.AddTransient<YahooService>();
+        services.AddTransient<YahooDailyDataService>();
 
         // Repositories
         services.AddTransient<IPlayerRepository, PlayerRepository>();

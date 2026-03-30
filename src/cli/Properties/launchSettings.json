@@ -2,7 +2,7 @@
   "profiles": {
     "FBMngt": {
       "commandName": "Project",
-      "commandLineArgs": "yahoo --persistInJsonFile"
+      "commandLineArgs": "yahoo --persistDaily"
     }
   }
 }
