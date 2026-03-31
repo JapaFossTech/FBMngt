@@ -33,11 +33,14 @@ class Program
             return new ConfigSettings(appSettings);
         });
 
-        // HttpClient (shared, best practice)
-        services.AddHttpClient();
+        // HttpClient factory
+        //services.AddHttpClient<YahooApiClient>();
+        services.AddHttpClient<YahooApiClient>()
+                .SetHandlerLifetime(TimeSpan.FromMinutes(5));
 
         // Yahoo services
-        services.AddTransient<YahooApiClient>();
+        //services.AddTransient<YahooApiClient>();
+        services.AddSingleton<YahooApiClient>();
         services.AddTransient<YahooService>();
         services.AddTransient<YahooDailyDataService>();
 
