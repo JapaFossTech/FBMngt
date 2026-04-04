@@ -2,45 +2,62 @@
 
 namespace FBMngt.Services.Yahoo;
 
-/// <summary>
-/// Extracts team nodes from Yahoo JSON structure
-/// </summary>
 public static class YahooTeamExtractor
 {
+    // ------------------------------------------------------------
+    // Entry point: extract all team nodes safely
+    // ------------------------------------------------------------
     public static IEnumerable<JsonElement> GetTeamNodes(
-        JsonElement teamsNode)
+        JsonElement root)
     {
-        foreach (var teamWrapper in YahooJsonHelper
-            .GetYahooCollection(teamsNode))
+        var results = new List<JsonElement>();
+
+        ExtractTeamNodesRecursive(root, results);
+
+        return results;
+    }
+
+    // ------------------------------------------------------------
+    // Recursive traversal to find "team" nodes
+    // ------------------------------------------------------------
+    private static void ExtractTeamNodesRecursive(
+        JsonElement element,
+        List<JsonElement> results)
+    {
+        if (element.ValueKind == JsonValueKind.Object)
         {
-            // Each wrapper:
-            // { "team": [ [ {...}, {...} ] ] }
-
-            if (!teamWrapper.TryGetProperty("team", 
-                                            out var teamArray))
-                continue;
-
-            if (teamArray.ValueKind != JsonValueKind.Array)
-                continue;
-
-            if (teamArray.GetArrayLength() == 0)
-                continue;
-
-            var firstLevel = teamArray[0];
-
-            // 🔥 FIX: handle double array
-            if (firstLevel.ValueKind == JsonValueKind.Array)
+            // If this object contains "team"
+            if (element.TryGetProperty("team", out var teamNode))
             {
-                if (firstLevel.GetArrayLength() == 0)
-                    continue;
-
-                // actual team data (array-of-objects)
-                yield return firstLevel;
+                if (teamNode.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var t in teamNode.EnumerateArray())
+                    {
+                        results.Add(t);
+                    }
+                }
+                else if (teamNode.ValueKind ==
+                         JsonValueKind.Object)
+                {
+                    results.Add(teamNode);
+                }
             }
-            else
+
+            // Traverse all properties
+            foreach (var prop in element.EnumerateObject())
             {
-                // fallback (rare case)
-                yield return firstLevel;
+                ExtractTeamNodesRecursive(
+                    prop.Value,
+                    results);
+            }
+        }
+        else if (element.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in element.EnumerateArray())
+            {
+                ExtractTeamNodesRecursive(
+                    item,
+                    results);
             }
         }
     }

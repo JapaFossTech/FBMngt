@@ -44,6 +44,12 @@ class Program
         services.AddTransient<YahooService>();
         services.AddTransient<YahooDailyDataService>();
 
+        // Yahoo Daily Ingest pipeline
+        services.AddScoped<YahooPlayerExtractor>();
+        services.AddScoped<YahooPlayerMapper>();
+        services.AddScoped<YahooPlayerIngestionService>();
+        services.AddScoped<YahooRosterFileProcessor>();
+
         // Repositories
         services.AddTransient<IPlayerRepository, PlayerRepository>();
         services.AddTransient<IPreDraftAdjustRepository, 

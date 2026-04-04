@@ -125,6 +125,22 @@ public class ConfigSettings: IConnectionString
             return fanProsCsvFile;
         }
     }
+    public string Yahoo_Path
+    {
+        get
+        {
+            return Path.Combine(AppSettings.ReportPath,
+            $@"yahoo"); ;
+        }
+    }
+    public string Yahoo_Daily_Path
+    {
+        get
+        {
+            return Path.Combine(AppSettings.ReportPath,
+            $@"yahoo\Daily"); ;
+        }
+    }
 
     public string MLB_ConnString => AppSettings.MLB_ConnString;
 }
