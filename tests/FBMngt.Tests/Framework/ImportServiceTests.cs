@@ -46,7 +46,7 @@ public class ImportServiceTests
 
         playerRepoMock
             .Setup(r => r.InsertAsync(It.IsAny<Player>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync(123);
 
         var resolver = new PlayerResolver(playerRepoMock.Object);
         var importer = new PlayerImportService(playerRepoMock.Object);
