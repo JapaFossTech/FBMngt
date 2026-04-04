@@ -1,4 +1,5 @@
-﻿using FBMngt.Services.Yahoo;
+﻿using FBMngt.Models;
+using FBMngt.Services.Yahoo;
 using FBMngt.Services.Yahoo.DailyIngest;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -62,3 +63,4 @@ public class YahooCommand
 // yahoo --persistInJsonFile
 // yahoo --persistStatic
 // yahoo --persistDaily
+

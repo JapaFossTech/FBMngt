@@ -28,125 +28,110 @@ public class PlayerResolver
             return;
 
         // 1️ Load ALL DB players once
-        List<Player> dbPlayers =
-            await _playerRepository.GetAllAsync();
+        List<Player> dbPlayers = await _playerRepository
+                                    .GetAllAsync();
 
-        // 2️ Build lookup: Name -> List<Player>
-        var lookup = new Dictionary<string, List<Player>>(
-            StringComparer.OrdinalIgnoreCase);
-
-        foreach (var p in dbPlayers)
-        {
-            AddLookup(lookup, p.PlayerName, p);
-            AddLookup(lookup, p.Aka1, p);
-            AddLookup(lookup, p.Aka2, p);
-        }
-
-        var notFound = new List<IPlayer>();
-        var multipleMatches = new List<(IPlayer, List<Player>)>();
-
-        //int lineCount = 1;
-
-        // 3️ Resolve PlayerID
-        foreach (IPlayer player in inputPlayers)
-        {
-            var key = player.PlayerName?.Trim();
-
-            if (string.IsNullOrWhiteSpace(key))
-            {
-                notFound.Add(player);
-                continue;
-            }
-
-            if (lookup.TryGetValue(key, out var matches))
-            {
-                // Get DISTINCT PlayerIDs
-                var distinctIds = matches
-                    .Where(m => m.PlayerID.HasValue)
-                    .Select(m => m.PlayerID!.Value)
-                    .Distinct()
-                    .ToList();
-
-                if (distinctIds.Count == 1)
-                {
-                    // ✅ All matches point to SAME player
-                    player.PlayerID = distinctIds[0];
-                }
-                else if (distinctIds.Count > 1)
-                {
-                    // ⚠️ TRUE ambiguity (different players)
-                    player.PlayerID = distinctIds[0]; // FIRST wins
-
-                    multipleMatches.Add((player, matches));
-                }
-                else
-                {
-                    // Edge case: no valid IDs
-                    player.PlayerID = null;
-                    notFound.Add(player);
-                }
-            }
-            else
-            {
-                // ❌ NOT FOUND
-                player.PlayerID = null;
-                notFound.Add(player);
-            }
-        }
-
-        // 4️ CLI OUTPUT
+        int notFoundCount = 0;
+        int multipleCount = 0;
 
         Console.WriteLine();
         Console.WriteLine("=== Player Resolver Summary ===");
+        Console.WriteLine($"Total Input Players: {inputPlayers.Count}");
 
-        Console.WriteLine(
-            $"Total Input Players: {inputPlayers.Count}");
-
-        Console.WriteLine(
-            $"Not Found: {notFound.Count}");
-
-        Console.WriteLine(
-            $"Multiple Matches: {multipleMatches.Count}");
-
-        // Detailed logs
-
-        if (notFound.Count > 0)
+        foreach (IPlayer player in inputPlayers)
         {
-            Console.WriteLine();
-            Console.WriteLine("---- Players NOT FOUND ----");
+            var name = player.PlayerName?.Trim();
 
-            foreach (var p in notFound)
+            if (string.IsNullOrWhiteSpace(name))
             {
-                Console.WriteLine(
-                    $"{p.PlayerName} | Team: {p.Team} " +
-                    $"| Pos: {p.Position}");
+                player.PlayerID = null;
+                continue;
             }
-        }
 
-        if (multipleMatches.Count > 0)
-        {
+            // STEP 1: Match by name (PlayerName + Aka)
+            var matches = dbPlayers
+                .Where(p =>
+                    string.Equals(p.PlayerName, name,
+                        StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(p.Aka1, name,
+                        StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(p.Aka2, name,
+                        StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (matches.Count == 0)
+            {
+                notFoundCount++;
+
+                Console.WriteLine(
+                    $"PlayerResolver: NOT FOUND: {name}");
+
+                player.PlayerID = null;
+                continue;
+            }
+
+            if (matches.Count == 1)
+            {
+                player.PlayerID = matches[0].PlayerID;
+                continue;
+            }
+
+            // ⚠️ MULTIPLE MATCHES → DISAMBIGUATE
+
+            var filtered = matches;
+
+            // STEP 2: Filter by Team (NOW using Team directly)
+            if (!string.IsNullOrWhiteSpace(player.Team))
+            {
+                filtered = filtered
+                    .Where(p =>
+                        string.Equals(
+                            p.Team,
+                            player.Team,
+                            StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            // STEP 3: Filter by Position
+            if (filtered.Count > 1 &&
+                !string.IsNullOrWhiteSpace(player.Position))
+            {
+                filtered = filtered
+                    .Where(p =>
+                        string.Equals(
+                            p.Position,
+                            player.Position,
+                            StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            if (filtered.Count == 1)
+            {
+                player.PlayerID = filtered[0].PlayerID;
+                continue;
+            }
+
+            // STILL ambiguous
+            multipleCount++;
+
             Console.WriteLine();
             Console.WriteLine(
-                "---- Players with MULTIPLE MATCHES ----");
+                $"---- Players with MULTIPLE MATCHES ----");
+            Console.WriteLine(
+                $"Input: {player.PlayerName} | Team: {player.Team} | Pos: {player.Position}");
 
-            foreach (var (input, matches)
-                     in multipleMatches)
+            foreach (var m in matches)
             {
                 Console.WriteLine(
-                    $"Input: {input.PlayerName} | " +
-                    $"Team: {input.Team} | Pos: {input.Position}");
-
-                foreach (var m in matches)
-                {
-                    Console.WriteLine(
-                        $"   -> DB PlayerID: {m.PlayerID} " +
-                        $"| Name: {m.PlayerName} " +
-                        $"| Org: {m.organization_id}");
-                }
+                    $"   -> DB PlayerID: {m.PlayerID} | Name: {m.PlayerName} | Org: {m.organization_id}");
             }
-        }
-    }
 
+            player.PlayerID = null;
+        }
+
+        Console.WriteLine($"Not Found: {notFoundCount}");
+        Console.WriteLine($"Multiple Matches: {multipleCount}");
+    }
     /// <summary>
     /// Adds player to lookup (supports multiple matches).
     /// </summary>
