@@ -14,88 +14,112 @@ public class YahooPlayerPersistenceService
     }
 
     /// <summary>
-    /// Persists a collection of players after resolution.
+    /// Persists players with optimized YahooPlayerID lookup.
     /// </summary>
-    public async Task PersistAsync(IEnumerable<Player> players)
+    public async Task<PlayerPersistenceStats> PersistAsync(
+        IEnumerable<Player> players)
     {
+        var stats = new PlayerPersistenceStats();
+
+        // --------------------------------------------------------
+        // LOAD ALL YahooPlayerIDs ONCE
+        // --------------------------------------------------------
+        var yahooIds = await _playerRepository
+            .GetAllYahooPlayerIdsAsync();
+
         foreach (var player in players)
         {
-            await ProcessPlayerAsync(player);
+            try
+            {
+                await ProcessPlayerAsync(player, stats, yahooIds);
+            }
+            catch (Exception ex)
+            {
+                stats.Errors++;
+
+                stats.ErrorDetails.Add(
+                    $"{player?.PlayerName} → {ex.Message}");
+            }
         }
+
+        return stats;
     }
 
-    /// <summary>
-    /// Core persistence logic per player.
-    /// </summary>
-    private async Task ProcessPlayerAsync(Player player)
+    private async Task ProcessPlayerAsync(
+        Player player,
+        PlayerPersistenceStats stats,
+        HashSet<int> yahooIds)
     {
         if (player == null)
-            return;
-
-        // --------------------------------------------------------
-        // CASE 1: PLAYER NOT FOUND → INSERT
-        // --------------------------------------------------------
-        if (!player.PlayerID.HasValue)
         {
-            await HandleInsertAsync(player);
+            stats.Skipped++;
             return;
         }
 
-        // --------------------------------------------------------
-        // CASE 2: PLAYER FOUND → UPDATE YahooPlayerID if needed
-        // --------------------------------------------------------
+        if (!player.PlayerID.HasValue)
+        {
+            await HandleInsertAsync(player, stats, yahooIds);
+            return;
+        }
+
         if (player.ExternalPlayerID.HasValue)
         {
-            await HandleUpdateAsync(player);
+            await HandleUpdateAsync(player, stats, yahooIds);
+        }
+        else
+        {
+            stats.Skipped++;
         }
     }
 
-    // ------------------------------------------------------------
-    // INSERT FLOW
-    // ------------------------------------------------------------
-    private async Task HandleInsertAsync(Player player)
+    private async Task HandleInsertAsync(
+        Player player,
+        PlayerPersistenceStats stats,
+        HashSet<int> yahooIds)
     {
-        // --------------------------------------------------------
-        // SAFETY: avoid duplicate YahooPlayerID
-        // --------------------------------------------------------
-        if (player.ExternalPlayerID.HasValue)
+        if (player.ExternalPlayerID.HasValue &&
+            yahooIds.Contains(player.ExternalPlayerID.Value))
         {
-            var exists = await _playerRepository
-                .ExistsByYahooPlayerIdAsync(
-                    player.ExternalPlayerID.Value);
+            stats.Conflicts++;
 
-            if (exists)
-            {
-                // TODO: log conflict
-                return;
-            }
+            stats.ConflictDetails.Add(
+                $"INSERT CONFLICT: {player.PlayerName} " +
+                $"YahooID={player.ExternalPlayerID}");
+
+            return;
         }
 
         var newPlayerId = await _playerRepository
             .InsertAsync(player);
 
-        // --------------------------------------------------------
-        // OPTIONAL: set ID back into object (useful later)
-        // --------------------------------------------------------
         player.PlayerID = newPlayerId;
+
+        // --------------------------------------------------------
+        // KEEP MEMORY IN SYNC
+        // --------------------------------------------------------
+        if (player.ExternalPlayerID.HasValue)
+        {
+            yahooIds.Add(player.ExternalPlayerID.Value);
+        }
+
+        stats.Inserted++;
     }
 
-    // ------------------------------------------------------------
-    // UPDATE FLOW
-    // ------------------------------------------------------------
-    private async Task HandleUpdateAsync(Player player)
+    private async Task HandleUpdateAsync(
+        Player player,
+        PlayerPersistenceStats stats,
+        HashSet<int> yahooIds)
     {
         var yahooId = player.ExternalPlayerID!.Value;
 
-        // --------------------------------------------------------
-        // SAFETY: avoid duplicate YahooPlayerID
-        // --------------------------------------------------------
-        var exists = await _playerRepository
-            .ExistsByYahooPlayerIdAsync(yahooId);
-
-        if (exists)
+        if (yahooIds.Contains(yahooId))
         {
-            // TODO: log conflict
+            stats.Conflicts++;
+
+            stats.ConflictDetails.Add(
+                $"UPDATE CONFLICT: {player.PlayerName} " +
+                $"YahooID={yahooId}");
+
             return;
         }
 
@@ -104,9 +128,15 @@ public class YahooPlayerPersistenceService
                 player.PlayerID!.Value,
                 yahooId);
 
-        if (!updated)
+        if (updated)
         {
-            // TODO: log skipped (already set)
+            yahooIds.Add(yahooId);
+
+            stats.Updated++;
+        }
+        else
+        {
+            stats.Skipped++;
         }
     }
 }

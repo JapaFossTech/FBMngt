@@ -150,9 +150,9 @@ public class PlayerRepository : IPlayerRepository
         int yahooPlayerId)
     {
         const string sql = @"
-SELECT COUNT(1)
-FROM dbo.tblPlayer
-WHERE YahooPlayerID = @YahooPlayerID";
+        SELECT COUNT(1)
+        FROM dbo.tblPlayer
+        WHERE YahooPlayerID = @YahooPlayerID";
 
         using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync();
@@ -185,10 +185,10 @@ WHERE YahooPlayerID = @YahooPlayerID";
         int yahooPlayerId)
     {
         const string sql = @"
-UPDATE dbo.tblPlayer
-SET YahooPlayerID = @YahooPlayerID
-WHERE PlayerID = @PlayerID
-  AND (YahooPlayerID IS NULL)";
+        UPDATE dbo.tblPlayer
+        SET YahooPlayerID = @YahooPlayerID
+        WHERE PlayerID = @PlayerID
+          AND (YahooPlayerID IS NULL)";
 
         using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync();
@@ -210,5 +210,37 @@ WHERE PlayerID = @PlayerID
         var rowsAffected = await command.ExecuteNonQueryAsync();
 
         return rowsAffected > 0;
+    }
+    // ------------------------------------------------------------
+    // NEW METHOD
+    // ------------------------------------------------------------
+    // Loads ALL YahooPlayerIDs into memory.
+    //
+    // PERFORMANCE:
+    // - Single DB call
+    // - Enables O(1) lookups
+    // ------------------------------------------------------------
+    public async Task<HashSet<int>> GetAllYahooPlayerIdsAsync()
+    {
+        const string sql = @"
+            SELECT YahooPlayerID
+            FROM dbo.tblPlayer
+            WHERE YahooPlayerID IS NOT NULL";
+
+        var result = new HashSet<int>();
+
+        using var conn = new SqlConnection(_connectionString);
+        await conn.OpenAsync();
+
+        using var cmd = new SqlCommand(sql, conn);
+
+        using var reader = await cmd.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
+        {
+            result.Add(reader.GetInt32(0));
+        }
+
+        return result;
     }
 }
