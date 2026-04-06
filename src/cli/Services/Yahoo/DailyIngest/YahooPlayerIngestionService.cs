@@ -8,28 +8,31 @@ namespace FBMngt.Services.Yahoo.DailyIngest;
 /// Orchestrates player ingestion from Yahoo roster JSON files.
 ///
 /// PIPELINE:
-/// JSON → Extract → Map → Deduplicate → Resolve
+/// JSON → Extract → Map → Deduplicate → Resolve → Persist
 /// </summary>
 public class YahooPlayerIngestionService
 {
     private readonly YahooPlayerExtractor _extractor;
     private readonly YahooPlayerMapper _mapper;
     private readonly PlayerResolver _resolver;
+    private readonly YahooPlayerPersistenceService _persistenceService;
 
     public YahooPlayerIngestionService(
         YahooPlayerExtractor extractor,
         YahooPlayerMapper mapper,
-        PlayerResolver resolver)
+        PlayerResolver resolver,
+        YahooPlayerPersistenceService persistenceService)
     {
         _extractor = extractor;
         _mapper = mapper;
         _resolver = resolver;
+        _persistenceService = persistenceService;
     }
 
     /// <summary>
     /// Processes a roster JSON document.
     /// </summary>
-    public async Task ProcessRosterAsync(
+    public async Task<PlayerPersistenceStats> ProcessRosterAsync(
         JsonElement root)
     {
         // 1. Extract raw player nodes
@@ -63,6 +66,17 @@ public class YahooPlayerIngestionService
         // 4. Resolve PlayerID against DB
         await _resolver.ResolvePlayerIDAsync(
             dedupedPlayers.Cast<IPlayer>().ToList());
+
+        // --------------------------------------------------------
+        // 5. PERSIST (NEW)
+        // --------------------------------------------------------
+        var stats = await _persistenceService
+            .PersistAsync(dedupedPlayers);
+
+        // --------------------------------------------------------
+        // 6. RETURN DIAGNOSTICS
+        // --------------------------------------------------------
+        return stats;
     }
 
     /// <summary>

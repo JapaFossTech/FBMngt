@@ -59,8 +59,13 @@ public class YahooRosterFileProcessor
 
             using var doc = JsonDocument.Parse(json);
 
-            await _ingestionService
+            var stats = await _ingestionService
                 .ProcessRosterAsync(doc.RootElement);
+
+            Console.WriteLine(
+                $"Inserted={stats.Inserted}, " +
+                $"Updated={stats.Updated}, " +
+                $"Conflicts={stats.Conflicts}");
         }
         catch (Exception ex)
         {
