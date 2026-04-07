@@ -45,7 +45,7 @@ public class YahooCommand
                 _serviceProvider.GetRequiredService<
                     YahooDailyDataService>();
 
-            //await dailyService.PersistDailyDataAsync();
+            await dailyService.PersistDailyDataAsync();
 
             var rosterProcessor =
                 _serviceProvider.GetRequiredService<

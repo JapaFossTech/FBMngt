@@ -21,15 +21,20 @@ public class PlayerResolver
         _playerRepository = playerRepository;
     }
 
-    public async virtual Task ResolvePlayerIDAsync(
-        List<IPlayer> inputPlayers)
+    // ------------------------------------------------------------
+    // NEW METHOD (PRIMARY IMPLEMENTATION)
+    // ------------------------------------------------------------
+    // Resolves players using PRELOADED DB players.
+    //
+    // PERFORMANCE:
+    // - Avoids repeated DB calls
+    // ------------------------------------------------------------
+    public Task ResolvePlayerIDAsync(
+        List<IPlayer> inputPlayers,
+        List<Player> dbPlayers)
     {
         if (inputPlayers.Count == 0)
-            return;
-
-        // 1️ Load ALL DB players once
-        List<Player> dbPlayers = await _playerRepository
-                                    .GetAllAsync();
+            return Task.CompletedTask;
 
         int notFoundCount = 0;
         int multipleCount = 0;
@@ -73,6 +78,8 @@ public class PlayerResolver
             if (matches.Count == 1)
             {
                 player.PlayerID = matches[0].PlayerID;
+                player.Team = matches[0].Team;
+                player.Position = matches[0].Position;
                 continue;
             }
 
@@ -80,7 +87,7 @@ public class PlayerResolver
 
             var filtered = matches;
 
-            // STEP 2: Filter by Team (NOW using Team directly)
+            // STEP 2: Filter by Team
             if (!string.IsNullOrWhiteSpace(player.Team))
             {
                 filtered = filtered
@@ -108,6 +115,8 @@ public class PlayerResolver
             if (filtered.Count == 1)
             {
                 player.PlayerID = filtered[0].PlayerID;
+                player.Team = filtered[0].Team;
+                player.Position = filtered[0].Position;
                 continue;
             }
 
@@ -131,7 +140,27 @@ public class PlayerResolver
 
         Console.WriteLine($"Not Found: {notFoundCount}");
         Console.WriteLine($"Multiple Matches: {multipleCount}");
+
+        return Task.CompletedTask;
     }
+
+    // ------------------------------------------------------------
+    // EXISTING METHOD (NOW WRAPPER)
+    // ------------------------------------------------------------
+    public async virtual Task ResolvePlayerIDAsync(
+        List<IPlayer> inputPlayers)
+    {
+        if (inputPlayers.Count == 0)
+            return;
+
+        // Load DB players ONCE
+        List<Player> dbPlayers = await _playerRepository
+                                    .GetAllAsync();
+
+        // Delegate to optimized method
+        await ResolvePlayerIDAsync(inputPlayers, dbPlayers);
+    }
+
     /// <summary>
     /// Adds player to lookup (supports multiple matches).
     /// </summary>

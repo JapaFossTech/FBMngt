@@ -42,13 +42,14 @@ class Program
         //services.AddTransient<YahooApiClient>();
         services.AddSingleton<YahooApiClient>();
         services.AddTransient<YahooService>();
-        services.AddTransient<YahooDailyDataService>();
 
         // Yahoo Daily Ingest pipeline
+        services.AddTransient<YahooDailyDataService>();
         services.AddScoped<YahooPlayerExtractor>();
         services.AddScoped<YahooPlayerMapper>();
         services.AddScoped<YahooPlayerIngestionService>();
         services.AddScoped<YahooRosterFileProcessor>();
+        services.AddTransient<YahooPlayerPersistenceService>();
 
         // Repositories
         services.AddTransient<IPlayerRepository, PlayerRepository>();

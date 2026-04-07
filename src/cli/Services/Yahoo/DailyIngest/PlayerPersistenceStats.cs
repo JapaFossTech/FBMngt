@@ -15,8 +15,8 @@ public class PlayerPersistenceStats
 
     public int Errors { get; set; }
 
-    // Optional: detailed tracking
+    // Detailed tracking
     public List<string> ConflictDetails { get; } = new();
-
     public List<string> ErrorDetails { get; } = new();
+    public List<string> SkippedDetails { get; } = new();
 }

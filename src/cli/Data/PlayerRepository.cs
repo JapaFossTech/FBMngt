@@ -70,17 +70,6 @@ public class PlayerRepository : IPlayerRepository
         return players;
     }
 
-    /// <summary>
-    /// Inserts a new player into tblPlayer.
-    ///
-    /// ENHANCED:
-    /// - Optionally inserts YahooPlayerID
-    /// - Returns newly created PlayerID
-    ///
-    /// RULES:
-    /// - Minimal required fields only
-    /// - Aka fields remain optional
-    /// </summary>
     public async Task<int> InsertAsync(Player player)
     {
         if (player == null)
@@ -90,12 +79,11 @@ public class PlayerRepository : IPlayerRepository
 
         using var cmd = new SqlCommand(
             @"
-        INSERT INTO dbo.tblPlayer
+        INSERT INTO tblPlayer
         (
             PlayerName,
             Aka1,
             Aka2,
-            YahooPlayerID,
             ModifiedDate
         )
         OUTPUT INSERTED.PlayerID
@@ -104,7 +92,6 @@ public class PlayerRepository : IPlayerRepository
             @PlayerName,
             @Aka1,
             @Aka2,
-            @YahooPlayerID,
             GETUTCDATE()
         );
         ",
@@ -122,73 +109,57 @@ public class PlayerRepository : IPlayerRepository
             "@Aka2",
             player.Aka2.ToDbValue());
 
-        cmd.Parameters.Add(
-            new SqlParameter("@YahooPlayerID", SqlDbType.Int)
-            {
-                Value = player.ExternalPlayerID.HasValue
-                    ? player.ExternalPlayerID.Value
-                    : DBNull.Value
-            });
+        await conn.OpenAsync();
+
+        var result = await cmd.ExecuteScalarAsync();
+
+        return result != null ? (int)result : 0;
+    }
+
+    /// <summary>
+    /// Loads YahooPlayerID → PlayerID mapping.
+    /// </summary>
+    public async Task<Dictionary<int, int>> GetYahooPlayerIdMapAsync()
+    {
+        var map = new Dictionary<int, int>();
+
+        using var conn = new SqlConnection(_connectionString);
+
+        using var cmd = new SqlCommand(
+            @"
+            SELECT PlayerID, YahooPlayerID
+            FROM dbo.tblPlayer
+            WHERE YahooPlayerID IS NOT NULL
+            ",
+            conn);
 
         await conn.OpenAsync();
 
-        var resultObj = await cmd.ExecuteScalarAsync();
+        using var reader = await cmd.ExecuteReaderAsync();
 
-        if (resultObj == null || resultObj == DBNull.Value)
+        while (await reader.ReadAsync())
         {
-            throw new Exception(
-                "Failed to insert player and retrieve PlayerID.");
-        }
+            var playerId = reader.GetInt32(0);
+            var yahooId = reader.GetInt32(1);
 
-        return Convert.ToInt32(resultObj);
-    }
-
-    // ------------------------------------------------------------
-    // NEW METHOD
-    // ------------------------------------------------------------
-    public async Task<bool> ExistsByYahooPlayerIdAsync(
-        int yahooPlayerId)
-    {
-        const string sql = @"
-        SELECT COUNT(1)
-        FROM dbo.tblPlayer
-        WHERE YahooPlayerID = @YahooPlayerID";
-
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
-
-        using var command = new SqlCommand(sql, connection);
-
-        command.Parameters.Add(
-            new SqlParameter("@YahooPlayerID", SqlDbType.Int)
+            if (!map.ContainsKey(yahooId))
             {
-                Value = yahooPlayerId
-            });
-
-        var resultObj = await command.ExecuteScalarAsync();
-
-        if (resultObj == null || resultObj == DBNull.Value)
-        {
-            return false;
+                map[yahooId] = playerId;
+            }
         }
 
-        var result = Convert.ToInt32(resultObj);
-
-        return result > 0;
+        return map;
     }
 
-    // ------------------------------------------------------------
-    // NEW METHOD
-    // ------------------------------------------------------------
     public async Task<bool> UpdateYahooPlayerIdAsync(
         int playerId,
         int yahooPlayerId)
     {
         const string sql = @"
-        UPDATE dbo.tblPlayer
-        SET YahooPlayerID = @YahooPlayerID
-        WHERE PlayerID = @PlayerID
-          AND (YahooPlayerID IS NULL)";
+UPDATE dbo.tblPlayer
+SET YahooPlayerID = @YahooPlayerID
+WHERE PlayerID = @PlayerID
+  AND (YahooPlayerID IS NULL)";
 
         using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync();
@@ -210,37 +181,5 @@ public class PlayerRepository : IPlayerRepository
         var rowsAffected = await command.ExecuteNonQueryAsync();
 
         return rowsAffected > 0;
-    }
-    // ------------------------------------------------------------
-    // NEW METHOD
-    // ------------------------------------------------------------
-    // Loads ALL YahooPlayerIDs into memory.
-    //
-    // PERFORMANCE:
-    // - Single DB call
-    // - Enables O(1) lookups
-    // ------------------------------------------------------------
-    public async Task<HashSet<int>> GetAllYahooPlayerIdsAsync()
-    {
-        const string sql = @"
-            SELECT YahooPlayerID
-            FROM dbo.tblPlayer
-            WHERE YahooPlayerID IS NOT NULL";
-
-        var result = new HashSet<int>();
-
-        using var conn = new SqlConnection(_connectionString);
-        await conn.OpenAsync();
-
-        using var cmd = new SqlCommand(sql, conn);
-
-        using var reader = await cmd.ExecuteReaderAsync();
-
-        while (await reader.ReadAsync())
-        {
-            result.Add(reader.GetInt32(0));
-        }
-
-        return result;
     }
 }

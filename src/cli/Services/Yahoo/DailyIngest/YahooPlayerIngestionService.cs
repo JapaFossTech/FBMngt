@@ -29,53 +29,64 @@ public class YahooPlayerIngestionService
         _persistenceService = persistenceService;
     }
 
+    ///// <summary>
+    ///// EXISTING METHOD (UNCHANGED BEHAVIOR)
+    ///// </summary>
+    //public async Task<PlayerPersistenceStats> ProcessRosterAsync(
+    //    JsonElement root)
+    //{
+    //    var playerNodes =
+    //        _extractor.ExtractPlayers(root);
+
+    //    var mappedPlayers = new List<Player>();
+
+    //    foreach (var node in playerNodes)
+    //    {
+    //        var player = _mapper.Map(node);
+    //        mappedPlayers.Add(player);
+    //    }
+
+    //    var dedupedPlayers =
+    //        Deduplicate(mappedPlayers);
+
+    //    await _resolver.ResolvePlayerIDAsync(
+    //        dedupedPlayers.Cast<IPlayer>().ToList());
+
+    //    var stats = await _persistenceService
+    //        .PersistAsync(dedupedPlayers);
+
+    //    return stats;
+    //}
+
     /// <summary>
-    /// Processes a roster JSON document.
+    /// NEW METHOD — BATCH OPTIMIZED
     /// </summary>
     public async Task<PlayerPersistenceStats> ProcessRosterAsync(
-        JsonElement root)
+        JsonElement root,
+        List<Player> dbPlayers,
+        Dictionary<int, int> yahooMap)
     {
-        // 1. Extract raw player nodes
         var playerNodes =
             _extractor.ExtractPlayers(root);
 
-        Console.WriteLine(
-            $"Extractor found {playerNodes.Count} players");
-
-        // 2. Map to domain model
         var mappedPlayers = new List<Player>();
 
         foreach (var node in playerNodes)
         {
             var player = _mapper.Map(node);
-
             mappedPlayers.Add(player);
         }
 
-        Console.WriteLine(
-            $"Mapped players: {mappedPlayers.Count}");
-
-        // 3. Deduplicate by ExternalPlayerID
         var dedupedPlayers =
             Deduplicate(mappedPlayers);
 
-        Console.WriteLine(
-            $"Unique players after dedup: " +
-            $"{dedupedPlayers.Count}");
-
-        // 4. Resolve PlayerID against DB
         await _resolver.ResolvePlayerIDAsync(
-            dedupedPlayers.Cast<IPlayer>().ToList());
+            dedupedPlayers.Cast<IPlayer>().ToList(),
+            dbPlayers);
 
-        // --------------------------------------------------------
-        // 5. PERSIST (NEW)
-        // --------------------------------------------------------
         var stats = await _persistenceService
-            .PersistAsync(dedupedPlayers);
+            .PersistAsync(dedupedPlayers, yahooMap);
 
-        // --------------------------------------------------------
-        // 6. RETURN DIAGNOSTICS
-        // --------------------------------------------------------
         return stats;
     }
 
@@ -102,12 +113,10 @@ public class YahooPlayerIngestionService
             }
             else
             {
-                // fallback (rare case)
                 noExternalId.Add(p);
             }
         }
 
-        // Add players without External ID (no dedup possible)
         return dict.Values
             .Concat(noExternalId)
             .ToList();

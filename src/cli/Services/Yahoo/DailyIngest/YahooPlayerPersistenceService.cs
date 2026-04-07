@@ -13,25 +13,17 @@ public class YahooPlayerPersistenceService
         _playerRepository = playerRepository;
     }
 
-    /// <summary>
-    /// Persists players with optimized YahooPlayerID lookup.
-    /// </summary>
     public async Task<PlayerPersistenceStats> PersistAsync(
-        IEnumerable<Player> players)
+        IEnumerable<Player> players,
+        Dictionary<int, int> yahooMap)
     {
         var stats = new PlayerPersistenceStats();
-
-        // --------------------------------------------------------
-        // LOAD ALL YahooPlayerIDs ONCE
-        // --------------------------------------------------------
-        var yahooIds = await _playerRepository
-            .GetAllYahooPlayerIdsAsync();
 
         foreach (var player in players)
         {
             try
             {
-                await ProcessPlayerAsync(player, stats, yahooIds);
+                await ProcessPlayerAsync(player, stats, yahooMap);
             }
             catch (Exception ex)
             {
@@ -48,7 +40,7 @@ public class YahooPlayerPersistenceService
     private async Task ProcessPlayerAsync(
         Player player,
         PlayerPersistenceStats stats,
-        HashSet<int> yahooIds)
+        Dictionary<int, int> yahooMap)
     {
         if (player == null)
         {
@@ -58,13 +50,13 @@ public class YahooPlayerPersistenceService
 
         if (!player.PlayerID.HasValue)
         {
-            await HandleInsertAsync(player, stats, yahooIds);
+            await HandleInsertAsync(player, stats, yahooMap);
             return;
         }
 
         if (player.ExternalPlayerID.HasValue)
         {
-            await HandleUpdateAsync(player, stats, yahooIds);
+            await HandleUpdateAsync(player, stats, yahooMap);
         }
         else
         {
@@ -75,17 +67,14 @@ public class YahooPlayerPersistenceService
     private async Task HandleInsertAsync(
         Player player,
         PlayerPersistenceStats stats,
-        HashSet<int> yahooIds)
+        Dictionary<int, int> yahooMap)
     {
-        if (player.ExternalPlayerID.HasValue &&
-            yahooIds.Contains(player.ExternalPlayerID.Value))
+        var yahooId = player.ExternalPlayerID;
+
+        if (yahooId.HasValue &&
+            yahooMap.ContainsKey(yahooId.Value))
         {
             stats.Conflicts++;
-
-            stats.ConflictDetails.Add(
-                $"INSERT CONFLICT: {player.PlayerName} " +
-                $"YahooID={player.ExternalPlayerID}");
-
             return;
         }
 
@@ -94,12 +83,9 @@ public class YahooPlayerPersistenceService
 
         player.PlayerID = newPlayerId;
 
-        // --------------------------------------------------------
-        // KEEP MEMORY IN SYNC
-        // --------------------------------------------------------
-        if (player.ExternalPlayerID.HasValue)
+        if (yahooId.HasValue)
         {
-            yahooIds.Add(player.ExternalPlayerID.Value);
+            yahooMap[yahooId.Value] = newPlayerId;
         }
 
         stats.Inserted++;
@@ -108,19 +94,30 @@ public class YahooPlayerPersistenceService
     private async Task HandleUpdateAsync(
         Player player,
         PlayerPersistenceStats stats,
-        HashSet<int> yahooIds)
+        Dictionary<int, int> yahooMap)
     {
         var yahooId = player.ExternalPlayerID!.Value;
 
-        if (yahooIds.Contains(yahooId))
+        if (yahooMap.TryGetValue(yahooId, out var existingPlayerId))
         {
-            stats.Conflicts++;
+            if (existingPlayerId == player.PlayerID)
+            {
+                stats.Skipped++;
 
-            stats.ConflictDetails.Add(
-                $"UPDATE CONFLICT: {player.PlayerName} " +
-                $"YahooID={yahooId}");
 
-            return;
+                return;
+            }
+            else
+            {
+                stats.Conflicts++;
+
+                Console.WriteLine(
+                    $"CONFLICT: {player.PlayerName} " +
+                    $"YahooID={yahooId} belongs to " +
+                    $"PlayerID={existingPlayerId}");
+
+                return;
+            }
         }
 
         var updated = await _playerRepository
@@ -130,9 +127,11 @@ public class YahooPlayerPersistenceService
 
         if (updated)
         {
-            yahooIds.Add(yahooId);
-
+            yahooMap[yahooId] = player.PlayerID.Value;
             stats.Updated++;
+
+            Console.WriteLine(
+                $"UPDATED: {player.PlayerName}");
         }
         else
         {
