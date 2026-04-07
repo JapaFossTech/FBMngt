@@ -189,7 +189,7 @@ public class ResolvePlayerIDAsyncTests
     }
     [Test]
     public async Task
-    GivenDuplicateAkaInDb_WhenResolving_ThenFirstPlayerWins()
+    GivenDuplicateAkaInDb_WhenResolving_ThenNoWinners()
     {
         // Arrange
         _dbPlayers.Add(
@@ -214,7 +214,7 @@ public class ResolvePlayerIDAsyncTests
         await _playerResolver.ResolvePlayerIDAsync(players);
 
         // Assert
-        Assert.That(players[0].PlayerID, Is.EqualTo(123));
+        Assert.That(players[0].PlayerID, Is.Null);
     }
     [Test]
     public async Task
