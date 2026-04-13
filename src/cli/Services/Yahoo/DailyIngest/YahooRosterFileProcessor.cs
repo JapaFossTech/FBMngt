@@ -146,6 +146,8 @@ public class YahooRosterFileProcessor
             var yahooPlayerIds =
                 ExtractYahooPlayerIds(doc.RootElement);
 
+            var entities = new List<Models.FB.FBTeamsPlayer>();
+
             DateTime now = DateTime.Now;
 
             foreach (var yahooPlayerId in yahooPlayerIds)
@@ -159,19 +161,22 @@ public class YahooRosterFileProcessor
                     continue;
                 }
 
-                var entity = new Models.FB.FBTeamsPlayer
+                entities.Add(new Models.FB.FBTeamsPlayer
                 {
                     FBLeaguesTeamID =
                         leagueTeam.FBLeaguesTeamID.Value,
                     PlayerID = playerId,
                     ModifiedDate = now
-                };
-
-                await _teamsPlayerRepo.InsertAsync(entity);
+                });
             }
 
+            // --------------------------------------------
+            // BULK INSERT (ONE CALL)
+            // --------------------------------------------
+            await _teamsPlayerRepo.BulkInsertAsync(entities);
+
             Console.WriteLine(
-                $"[FB] Roster persisted for {teamKey}");
+                $"[FB] Roster persisted ({entities.Count}) for {teamKey}");
 
             return stats;
         }

@@ -2,6 +2,7 @@
 
 using FBMngt.Models.FB;
 using Microsoft.Data.SqlClient;
+using System.Data;
 
 /// <summary>
 /// SQL repository for team-player relationships.
@@ -39,39 +40,53 @@ WHERE FBLeaguesTeamID = @FBLeaguesTeamID";
     }
 
     /// <summary>
-    /// Inserts a team-player record.
+    /// Bulk inserts team-player records.
+    /// Uses SqlBulkCopy for performance.
     /// </summary>
-    public async Task InsertAsync(
-        FBTeamsPlayer entity)
+    public async Task BulkInsertAsync(
+        List<FBTeamsPlayer> entities)
     {
-        const string sql = @"
-INSERT INTO dbo.tblFBTeamsPlayer
-(
-    FBLeaguesTeamID,
-    PlayerID,
-    ModifiedDate
-)
-VALUES
-(
-    @FBLeaguesTeamID,
-    @PlayerID,
-    @ModifiedDate
-)";
+        if (entities == null || entities.Count == 0)
+        {
+            return;
+        }
 
         using var conn = new SqlConnection(_connectionString);
         await conn.OpenAsync();
 
-        using var cmd = new SqlCommand(sql, conn);
+        using var bulk = new SqlBulkCopy(conn);
 
-        cmd.Parameters.AddWithValue(
-            "@FBLeaguesTeamID", entity.FBLeaguesTeamID);
+        bulk.DestinationTableName = "dbo.tblFBTeamsPlayer";
 
-        cmd.Parameters.AddWithValue(
-            "@PlayerID", entity.PlayerID);
+        // --------------------------------------------
+        // CREATE DATATABLE
+        // --------------------------------------------
+        var table = new DataTable();
 
-        cmd.Parameters.AddWithValue(
-            "@ModifiedDate", entity.ModifiedDate);
+        table.Columns.Add("FBLeaguesTeamID", typeof(int));
+        table.Columns.Add("PlayerID", typeof(int));
+        table.Columns.Add("ModifiedDate", typeof(DateTime));
 
-        await cmd.ExecuteNonQueryAsync();
+        foreach (var e in entities)
+        {
+            table.Rows.Add(
+                e.FBLeaguesTeamID,
+                e.PlayerID,
+                e.ModifiedDate);
+        }
+
+        // --------------------------------------------
+        // MAP COLUMNS
+        // --------------------------------------------
+        bulk.ColumnMappings.Add(
+            "FBLeaguesTeamID", "FBLeaguesTeamID");
+
+        bulk.ColumnMappings.Add(
+            "PlayerID", "PlayerID");
+
+        bulk.ColumnMappings.Add(
+            "ModifiedDate", "ModifiedDate");
+
+        await bulk.WriteToServerAsync(table);
     }
 }

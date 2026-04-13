@@ -15,8 +15,8 @@ public interface IFBTeamsPlayerRepository
         int fbLeaguesTeamID);
 
     /// <summary>
-    /// Inserts a team-player record.
+    /// Bulk inserts team-player records.
     /// </summary>
-    Task InsertAsync(
-        FBTeamsPlayer entity);
+    Task BulkInsertAsync(
+        List<FBTeamsPlayer> entities);
 }
