@@ -89,4 +89,55 @@ WHERE FBLeaguesTeamID = @FBLeaguesTeamID";
 
         await bulk.WriteToServerAsync(table);
     }
+
+    public async Task<List<int>>
+    GetPlayerIdsByLeagueTeamIdAsync(
+        int fbLeaguesTeamID)
+    {
+        const string sql = @"
+        SELECT PlayerID
+        FROM dbo.tblFBTeamsPlayer
+        WHERE FBLeaguesTeamID = @FBLeaguesTeamID";
+
+        var result = new List<int>();
+
+        using var conn = new SqlConnection(_connectionString);
+        await conn.OpenAsync();
+
+        using var cmd = new SqlCommand(sql, conn);
+
+        cmd.Parameters.AddWithValue(
+            "@FBLeaguesTeamID", fbLeaguesTeamID);
+
+        using var reader = await cmd.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
+        {
+            result.Add(reader.GetInt32(0));
+        }
+
+        return result;
+    }
+    public async Task DeleteAsync(
+    int fbLeaguesTeamID,
+    int playerID)
+    {
+        const string sql = @"
+        DELETE FROM dbo.tblFBTeamsPlayer
+        WHERE FBLeaguesTeamID = @FBLeaguesTeamID
+          AND PlayerID = @PlayerID";
+
+        using var conn = new SqlConnection(_connectionString);
+        await conn.OpenAsync();
+
+        using var cmd = new SqlCommand(sql, conn);
+
+        cmd.Parameters.AddWithValue(
+            "@FBLeaguesTeamID", fbLeaguesTeamID);
+
+        cmd.Parameters.AddWithValue(
+            "@PlayerID", playerID);
+
+        await cmd.ExecuteNonQueryAsync();
+    }
 }

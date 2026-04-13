@@ -19,4 +19,16 @@ public interface IFBTeamsPlayerRepository
     /// </summary>
     Task BulkInsertAsync(
         List<FBTeamsPlayer> entities);
+    /// <summary>
+    /// Gets all PlayerIDs for a team.
+    /// </summary>
+    Task<List<int>> GetPlayerIdsByLeagueTeamIdAsync(
+        int fbLeaguesTeamID);
+
+    /// <summary>
+    /// Deletes a specific player from a team.
+    /// </summary>
+    Task DeleteAsync(
+        int fbLeaguesTeamID,
+        int playerID);
 }

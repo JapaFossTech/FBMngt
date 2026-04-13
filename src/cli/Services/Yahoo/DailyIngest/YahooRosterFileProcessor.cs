@@ -109,7 +109,7 @@ public class YahooRosterFileProcessor
             PrintFileStats(stats, filePath);
 
             // --------------------------------------------------------
-            // FANTASY ROSTER PERSISTENCE (NEW)
+            // FANTASY ROSTER PERSISTENCE (SMART UPDATE)
             // --------------------------------------------------------
             string fileName = Path.GetFileName(filePath);
 
@@ -123,7 +123,7 @@ public class YahooRosterFileProcessor
                 return stats;
             }
 
-            // ✅ Correct
+            // ✅ Extract team key correctly
             string teamKey = parts[1];
 
             // Resolve FBLeaguesTeamID
@@ -137,18 +137,27 @@ public class YahooRosterFileProcessor
                 return stats;
             }
 
-            // DELETE existing roster (overwrite model)
-            await _teamsPlayerRepo.DeleteByLeagueTeamIdAsync(
-                leagueTeam.FBLeaguesTeamID!.Value);
+            int leagueTeamId =
+                leagueTeam.FBLeaguesTeamID!.Value;
 
-            // Insert players
+            // --------------------------------------------
+            // CURRENT DB STATE
+            // --------------------------------------------
+            var currentPlayerIds =
+                await _teamsPlayerRepo
+                    .GetPlayerIdsByLeagueTeamIdAsync(
+                        leagueTeamId);
 
+            var currentSet =
+                new HashSet<int>(currentPlayerIds);
+
+            // --------------------------------------------
+            // INCOMING STATE (FROM JSON)
+            // --------------------------------------------
             var yahooPlayerIds =
                 ExtractYahooPlayerIds(doc.RootElement);
 
-            var entities = new List<Models.FB.FBTeamsPlayer>();
-
-            DateTime now = DateTime.Now;
+            var incomingSet = new HashSet<int>();
 
             foreach (var yahooPlayerId in yahooPlayerIds)
             {
@@ -157,26 +166,71 @@ public class YahooRosterFileProcessor
                     out int playerId))
                 {
                     Console.WriteLine(
-                        $"[FB] Player not resolved: {yahooPlayerId}");
+                        "[FB] Player not resolved: " +
+                        yahooPlayerId);
                     continue;
                 }
 
-                entities.Add(new Models.FB.FBTeamsPlayer
-                {
-                    FBLeaguesTeamID =
-                        leagueTeam.FBLeaguesTeamID.Value,
-                    PlayerID = playerId,
-                    ModifiedDate = now
-                });
+                incomingSet.Add(playerId);
             }
 
             // --------------------------------------------
-            // BULK INSERT (ONE CALL)
+            // DIFF CALCULATION
             // --------------------------------------------
-            await _teamsPlayerRepo.BulkInsertAsync(entities);
 
+            // Players to INSERT
+            var toInsert = incomingSet
+                .Except(currentSet)
+                .ToList();
+
+            // Players to DELETE
+            var toDelete = currentSet
+                .Except(incomingSet)
+                .ToList();
+
+            DateTime now = DateTime.Now;
+
+            // --------------------------------------------
+            // INSERT NEW PLAYERS (BULK)
+            // --------------------------------------------
+            var insertEntities =
+                new List<Models.FB.FBTeamsPlayer>();
+
+            foreach (var playerId in toInsert)
+            {
+                insertEntities.Add(
+                    new Models.FB.FBTeamsPlayer
+                    {
+                        FBLeaguesTeamID = leagueTeamId,
+                        PlayerID = playerId,
+                        ModifiedDate = now
+                    });
+            }
+
+            if (insertEntities.Count > 0)
+            {
+                await _teamsPlayerRepo
+                    .BulkInsertAsync(insertEntities);
+            }
+
+            // --------------------------------------------
+            // DELETE REMOVED PLAYERS
+            // --------------------------------------------
+            foreach (var playerId in toDelete)
+            {
+                await _teamsPlayerRepo.DeleteAsync(
+                    leagueTeamId,
+                    playerId);
+            }
+
+            // --------------------------------------------
+            // LOGGING
+            // --------------------------------------------
             Console.WriteLine(
-                $"[FB] Roster persisted ({entities.Count}) for {teamKey}");
+                $"[FB] Roster sync for {teamKey} | " +
+                $"Add: {toInsert.Count}, " +
+                $"Remove: {toDelete.Count}, " +
+                $"Keep: {incomingSet.Count - toInsert.Count}");
 
             return stats;
         }
@@ -192,7 +246,6 @@ public class YahooRosterFileProcessor
             };
         }
     }
-
     // ------------------------------------------------------------
     // AGGREGATION
     // ------------------------------------------------------------
