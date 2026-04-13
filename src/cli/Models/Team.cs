@@ -11,8 +11,3 @@ public class Team
     // Keep this if needed
     public string? mlb_org_abbrev { get; set; }
 }
-public class FBTeam
-{
-    public string? TeamKey { get; set; }
-    public string? Name { get; set; }
-}

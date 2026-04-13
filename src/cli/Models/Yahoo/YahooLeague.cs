@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FBMngt.Models;
+namespace FBMngt.Models.Yahoo;
 
-public class League
+public class YahooLeague
 {
     public string LeagueKey { get; set; } = default!;
     public string Name { get; set; } = default!;
-    public List<FBTeam> Teams { get; set; } = new();
+    public List<YahooTeam> Teams { get; set; } = new();
 }

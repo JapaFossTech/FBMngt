@@ -1,4 +1,6 @@
-﻿using FBMngt.Models;
+﻿using FBMngt.Data.FB;
+using FBMngt.Models;
+using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json;
 
 namespace FBMngt.Services.Yahoo;
@@ -7,13 +9,16 @@ public class YahooService
 {
     private readonly YahooApiClient _apiClient;
     private readonly ConfigSettings _config;
+    private readonly IServiceProvider _serviceProvider;
 
     //Ctor
     public YahooService(YahooApiClient apiClient,
-                        ConfigSettings config)
+                        ConfigSettings config,
+                        IServiceProvider serviceProvider)
     {
         _apiClient = apiClient;
         _config = config;
+        _serviceProvider = serviceProvider;
     }
 
     //----------------------------------------------------------
@@ -187,28 +192,155 @@ public class YahooService
     //----------------------------------------------------------
     // Existing static read
     //----------------------------------------------------------
-    public Task PersistStaticAsync()
+    public async Task PersistStaticAsync()
     {
-        string leagueKey = "469.l.7042";
-
-        string reportID = leagueKey + "_teams";
-
-        string yahooPath = Path.Combine(
+        var yahooDir = Path.Combine(
             _config.AppSettings.ReportPath,
-            $@"yahoo\yahoo_{reportID}.json");
+            "yahoo");
 
-        var league =
-            YahooTeamReader.ReadLeagueFromFile(yahooPath);
-
-        Console.WriteLine(
-            $"{league.LeagueKey} | {league.Name}");
-
-        foreach (var team in league.Teams)
+        if (!Directory.Exists(yahooDir))
         {
             Console.WriteLine(
-                $"{team.TeamKey} | {team.Name}");
+                $"Directory not found: {yahooDir}");
+            return;
         }
 
-        return Task.CompletedTask;
+        var files = Directory.GetFiles(
+            yahooDir,
+            "yahoo_*_teams.json",
+            SearchOption.TopDirectoryOnly);
+
+        Console.WriteLine(
+            $"Found {files.Length} league files");
+
+        int season = DateTime.Now.Year;
+
+        // --------------------------------------------------------
+        // RESOLVE REPOSITORIES
+        // --------------------------------------------------------
+        var leagueRepo =
+            _serviceProvider.GetRequiredService<
+                IFantasyLeagueRepository>();
+
+        var teamRepo =
+            _serviceProvider.GetRequiredService<
+                IFantasyTeamRepository>();
+
+        var leagueTeamRepo =
+            _serviceProvider.GetRequiredService<
+                IFantasyLeagueTeamRepository>();
+
+        foreach (var file in files)
+        {
+            Console.WriteLine();
+            Console.WriteLine(
+                $"Processing: {Path.GetFileName(file)}");
+
+            var league =
+                YahooTeamReader.ReadLeagueFromFile(file);
+
+            Console.WriteLine(
+                $"{league.LeagueKey} | {league.Name}");
+
+            // ----------------------------------------------------
+            // UPSERT LEAGUE
+            // ----------------------------------------------------
+            var dbLeague = await leagueRepo
+                .GetByYahooKeyAsync(league.LeagueKey);
+
+            if (dbLeague == null)
+            {
+                dbLeague = new Models.FB.FBLeague
+                {
+                    YahooLeagueKey = league.LeagueKey,
+                    LeagueName = league.Name,
+                    Season = season
+                };
+
+                dbLeague.FBLeagueID =
+                    await leagueRepo.InsertAsync(dbLeague);
+
+                Console.WriteLine(
+                    $"[FB] Inserted League: {dbLeague.LeagueName}");
+            }
+            else
+            {
+                Console.WriteLine(
+                    $"[FB] League exists: {dbLeague.LeagueName}");
+            }
+
+            // ----------------------------------------------------
+            // TEAMS
+            // ----------------------------------------------------
+            foreach (var team in league.Teams)
+            {
+                Console.WriteLine(
+                    $"{team.TeamKey} | {team.Name}");
+
+                if (string.IsNullOrWhiteSpace(team.TeamKey))
+                {
+                    Console.WriteLine(
+                        "[FB] Missing TeamKey. Skipping.");
+                    continue;
+                }
+
+                // --------------------------------------------
+                // UPSERT TEAM
+                // --------------------------------------------
+                var dbTeam = await teamRepo
+                    .GetByNameAsync(team.Name ?? "UNKNOWN");
+
+                if (dbTeam == null)
+                {
+                    dbTeam = new Models.FB.FBTeam
+                    {
+                        TeamName = team.Name ?? "UNKNOWN",
+                        IsJavier = false
+                    };
+
+                    dbTeam.FBTeamID =
+                        await teamRepo.InsertAsync(dbTeam);
+
+                    Console.WriteLine(
+                        $"[FB] Inserted Team: {dbTeam.TeamName}");
+                }
+                else
+                {
+                    Console.WriteLine(
+                        $"[FB] Team exists: {dbTeam.TeamName}");
+                }
+
+                // --------------------------------------------
+                // UPSERT LEAGUE-TEAM
+                // --------------------------------------------
+                var dbLeagueTeam =
+                    await leagueTeamRepo
+                        .GetByYahooTeamKeyAsync(team.TeamKey);
+
+                if (dbLeagueTeam == null)
+                {
+                    var leagueTeam =
+                        new Models.FB.FBLeagueTeam
+                        {
+                            FBLeagueID =
+                            dbLeague.FBLeagueID!.Value,
+                            FBTeamID =
+                            dbTeam.FBTeamID!.Value,
+                            YahooTeamKey = team.TeamKey
+                        };
+
+                    await leagueTeamRepo
+                        .InsertAsync(leagueTeam);
+
+                    Console.WriteLine(
+                        "[FB] Linked Team to League");
+                }
+                else
+                {
+                    Console.WriteLine(
+                        "[FB] League-Team exists");
+                }
+            }
+        }
     }
 }

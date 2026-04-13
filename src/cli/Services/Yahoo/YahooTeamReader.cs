@@ -1,11 +1,11 @@
-﻿using FBMngt.Models;
+﻿using FBMngt.Models.Yahoo;
 using System.Text.Json;
 
 namespace FBMngt.Services.Yahoo;
 
 public static class YahooTeamReader
 {
-    public static League ReadLeagueFromFile(string filePath)
+    public static YahooLeague ReadLeagueFromFile(string filePath)
     {
         using var stream = File.OpenRead(filePath);
         using var document = JsonDocument.Parse(stream);

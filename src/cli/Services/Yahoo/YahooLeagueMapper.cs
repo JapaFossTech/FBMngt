@@ -1,14 +1,14 @@
-﻿using FBMngt.Models;
+﻿using FBMngt.Models.Yahoo;
 using System.Text.Json;
 
 namespace FBMngt.Services.Yahoo;
 
 public static class YahooLeagueMapper
 {
-    public static League Map(JsonElement leagueNode)
+    public static YahooLeague Map(JsonElement leagueNode)
     {
         // Map only metadata here (teams handled outside)
-        var league = new League
+        var league = new YahooLeague
         {
             LeagueKey = YahooJsonNavigator.GetString(
                 leagueNode, "league_key"),
@@ -16,7 +16,7 @@ public static class YahooLeagueMapper
             Name = YahooJsonNavigator.GetString(
                 leagueNode, "name"),
 
-            Teams = new List<FBTeam>()
+            Teams = new List<YahooTeam>()
         };
 
         // 🔍 Validation

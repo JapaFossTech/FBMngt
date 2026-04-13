@@ -1,13 +1,13 @@
-﻿using FBMngt.Models;
+﻿using FBMngt.Models.Yahoo;
 using System.Text.Json;
 
 namespace FBMngt.Services.Yahoo;
 
 public static class YahooTeamMapper
 {
-    public static FBTeam Map(JsonElement teamNode)
+    public static YahooTeam Map(JsonElement teamNode)
     {
-        var team = new FBTeam
+        var team = new YahooTeam
         {
             TeamKey = YahooJsonNavigator.GetString(
                 teamNode, "team_key"),

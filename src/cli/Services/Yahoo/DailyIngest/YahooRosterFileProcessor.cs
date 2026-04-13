@@ -1,6 +1,7 @@
-﻿using System.Text.Json;
-using FBMngt.Data;
+﻿using FBMngt.Data;
+using FBMngt.Data.FB;
 using FBMngt.Models;
+using System.Text.Json;
 
 namespace FBMngt.Services.Yahoo.DailyIngest;
 
@@ -15,13 +16,19 @@ public class YahooRosterFileProcessor
 {
     private readonly YahooPlayerIngestionService _ingestionService;
     private readonly IPlayerRepository _playerRepository;
+    private readonly IFantasyLeagueTeamRepository _leagueTeamRepo;
+    private readonly IFBTeamsPlayerRepository _teamsPlayerRepo;
 
     public YahooRosterFileProcessor(
         YahooPlayerIngestionService ingestionService,
-        IPlayerRepository playerRepository)
+        IPlayerRepository playerRepository,
+        IFantasyLeagueTeamRepository leagueTeamRepo,
+        IFBTeamsPlayerRepository teamsPlayerRepo)
     {
         _ingestionService = ingestionService;
         _playerRepository = playerRepository;
+        _leagueTeamRepo = leagueTeamRepo;
+        _teamsPlayerRepo = teamsPlayerRepo;
     }
 
     /// <summary>
@@ -101,6 +108,71 @@ public class YahooRosterFileProcessor
 
             PrintFileStats(stats, filePath);
 
+            // --------------------------------------------------------
+            // FANTASY ROSTER PERSISTENCE (NEW)
+            // --------------------------------------------------------
+            string fileName = Path.GetFileName(filePath);
+
+            // yahoo_469.l.33371.t.10_roster.json
+            string[] parts = fileName.Split('_');
+
+            if (parts.Length < 3)
+            {
+                Console.WriteLine(
+                    $"[FB] Invalid file name: {fileName}");
+                return stats;
+            }
+
+            // ✅ Correct
+            string teamKey = parts[1];
+
+            // Resolve FBLeaguesTeamID
+            var leagueTeam = await _leagueTeamRepo
+                .GetByYahooTeamKeyAsync(teamKey);
+
+            if (leagueTeam == null)
+            {
+                Console.WriteLine(
+                    $"[FB] LeaguesTeam not found for {teamKey}");
+                return stats;
+            }
+
+            // DELETE existing roster (overwrite model)
+            await _teamsPlayerRepo.DeleteByLeagueTeamIdAsync(
+                leagueTeam.FBLeaguesTeamID!.Value);
+
+            // Insert players
+
+            var yahooPlayerIds =
+                ExtractYahooPlayerIds(doc.RootElement);
+
+            DateTime now = DateTime.Now;
+
+            foreach (var yahooPlayerId in yahooPlayerIds)
+            {
+                if (!yahooMap.TryGetValue(
+                    yahooPlayerId,
+                    out int playerId))
+                {
+                    Console.WriteLine(
+                        $"[FB] Player not resolved: {yahooPlayerId}");
+                    continue;
+                }
+
+                var entity = new Models.FB.FBTeamsPlayer
+                {
+                    FBLeaguesTeamID =
+                        leagueTeam.FBLeaguesTeamID.Value,
+                    PlayerID = playerId,
+                    ModifiedDate = now
+                };
+
+                await _teamsPlayerRepo.InsertAsync(entity);
+            }
+
+            Console.WriteLine(
+                $"[FB] Roster persisted for {teamKey}");
+
             return stats;
         }
         catch (Exception ex)
@@ -168,5 +240,50 @@ public class YahooRosterFileProcessor
         Console.WriteLine($"Conflicts: {stats.Conflicts}");
         Console.WriteLine($"Errors   : {stats.Errors}");
         Console.WriteLine("=================================");
+    }
+
+    /// <summary>
+    /// Extracts Yahoo Player IDs from roster JSON.
+    /// Uses recursive traversal (no assumptions).
+    /// </summary>
+    private List<int> ExtractYahooPlayerIds(
+        JsonElement element)
+    {
+        var result = new List<int>();
+
+        ExtractRecursive(element, result);
+
+        return result;
+    }
+
+    private void ExtractRecursive(
+        JsonElement element,
+        List<int> result)
+    {
+        if (element.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var prop in element.EnumerateObject())
+            {
+                // Yahoo uses "player_id"
+                if (prop.NameEquals("player_id"))
+                {
+                    if (int.TryParse(
+                        prop.Value.ToString(),
+                        out int id))
+                    {
+                        result.Add(id);
+                    }
+                }
+
+                ExtractRecursive(prop.Value, result);
+            }
+        }
+        else if (element.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in element.EnumerateArray())
+            {
+                ExtractRecursive(item, result);
+            }
+        }
     }
 }

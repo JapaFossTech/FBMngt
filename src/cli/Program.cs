@@ -1,6 +1,7 @@
 ﻿using FBMngt;
 using FBMngt.Commands;
 using FBMngt.Data;
+using FBMngt.Data.FB;
 using FBMngt.IO;
 using FBMngt.IO.Csv;
 using FBMngt.Services.Importing;
@@ -57,6 +58,15 @@ class Program
                               PreDraftAdjustRepository>();
         services.AddTransient<IMockDraftRepository, 
                               MockDraftRepository>();
+
+        services.AddTransient<IFantasyLeagueRepository,
+                              FantasyLeagueRepository>();
+        services.AddTransient<IFantasyTeamRepository,
+                              FantasyTeamRepository>();
+        services.AddTransient<IFantasyLeagueTeamRepository,
+                              FantasyLeagueTeamRepository>();
+        services.AddTransient<IFBTeamsPlayerRepository,
+                              FBTeamsPlayerRepository>();
 
         // commands
         services.AddTransient<ImportCommand>();
