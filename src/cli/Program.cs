@@ -2,6 +2,7 @@
 using FBMngt.Commands;
 using FBMngt.Data;
 using FBMngt.Data.FB;
+using FBMngt.Data.SPTrending;
 using FBMngt.IO;
 using FBMngt.IO.Csv;
 using FBMngt.Services.Importing;
@@ -67,6 +68,7 @@ class Program
                               FantasyLeagueTeamRepository>();
         services.AddTransient<IFBTeamsPlayerRepository,
                               FBTeamsPlayerRepository>();
+        services.AddTransient<WaiverRepository>();
 
         // commands
         services.AddTransient<ImportCommand>();
