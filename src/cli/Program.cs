@@ -68,7 +68,9 @@ class Program
                               FantasyLeagueTeamRepository>();
         services.AddTransient<IFBTeamsPlayerRepository,
                               FBTeamsPlayerRepository>();
-        services.AddTransient<WaiverRepository>();
+        //services.AddTransient<IWaiverRepository, WaiverRepository>();
+        services.AddTransient<ISPTrendingRepository,
+                              SPTrendingRepository>();
 
         // commands
         services.AddTransient<ImportCommand>();
@@ -222,4 +224,5 @@ class Program
     // report --PreDraftRankingMovement
     // report --MockMarketDelta --days 6
     // report --PositionDraftDistribution --days 6
+    // waivers --sp
 }
