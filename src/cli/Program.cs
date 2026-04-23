@@ -68,7 +68,6 @@ class Program
                               FantasyLeagueTeamRepository>();
         services.AddTransient<IFBTeamsPlayerRepository,
                               FBTeamsPlayerRepository>();
-        //services.AddTransient<IWaiverRepository, WaiverRepository>();
         services.AddTransient<ISPTrendingRepository,
                               SPTrendingRepository>();
 
